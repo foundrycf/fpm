@@ -1,6 +1,6 @@
 fpm
 ===
-a package manager for foundry
+a package manager for [foundry](http://github.com/joshuairl/foundry)
 
 This is not even an alpha... purely in it's concept stages.
 Thinking of using Foundry as a way to do a port of NPM to CF.
