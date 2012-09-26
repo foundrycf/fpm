@@ -1,0 +1,6 @@
+[submodule "foundry_modules/async"]
+	path = foundry_modules/async
+	url = git@github.com:joshuairl/async.git
+[submodule "foundry_modules/semver"]
+	path = foundry_modules/semver
+	url = ../semver.git
