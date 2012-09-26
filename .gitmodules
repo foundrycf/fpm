@@ -3,4 +3,4 @@
 	url = git@github.com:joshuairl/async.git
 [submodule "foundry_modules/semver"]
 	path = foundry_modules/semver
-	url = ../semver.git
+	url = https://github.com/joshuairl/semver.git
