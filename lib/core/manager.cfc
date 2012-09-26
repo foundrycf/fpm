@@ -1,7 +1,7 @@
 // ==========================================
-// BOWER: Manager Object Definition
+// FPM: Manager Object Definition
 // ==========================================
-// Copyright 2012 Twitter, Inc
+// Copyright 2012 FoundryCF
 // Licensed under The MIT License
 // http://opensource.org/licenses/MIT
 // ==========================================
@@ -12,16 +12,139 @@
 // - data: fired when trying to output data
 // - end: fired when finished installing
 // ==========================================
-component {
+
+component name="Manager" {
 	variables.Package = require('./package');
 	variables.config = require('./config');
 	variables.prune = require('../util/prune');
 	variables.events = require('events');
 	variables.async = require('async');
+	variables.console = require('console');
 	variables.path = require('path');
-	variables.glob = require('glob');
 	variables.fs = require('fs');
+	variables._ = require("UnderscoreCF");
 	this.dependencies = {};
 	this.cwd = getPageContext();
 	this.endpoints = endpoints || [];
+
+	this.emit = events.emit;
+	this.on = events.on;
+	this.once = events.once;
+
+	public any function resolve() {
+	  var resolved = function() {
+	    this.prune();
+	    
+	    this.on('install', this.emit('resolve'));
+	    
+	    this.install();
+	  };
+
+	  this.once('resolveLocal', function () {
+	    if (this.endpoints.length) {
+	      this.once('resolveEndpoints', resolved).resolveEndpoints();
+	    } else {
+	      this.once('resolveFromJson', resolved).resolveFromJson();
+	    }
+	  });
+
+	  this.resolveLocal();
+	  return this;
+	};
+
+	public any function resolveLocal() {
+		var dirs = directoryList(path='./' + config.directory + '/',listInfo="path");
+
+		_.forEach(dirs,function(dir) {
+			var name = path.basename(dir);
+
+			this.dependencies[name] = [];
+			this.dependencies[name].push(new Package(name, dir, this));
+
+		});
+
+		this.emit('resolveLocal');
+	};
+
+	public any function resolveEndpoints() {
+	  // Iterate through paths
+	  // Add to depedencies array
+	  // Prune & install
+
+	  _.forEach(this.endpoints, function (endpoint, next) {
+	    var name = path.basename(endpoint).replace(/(\.git)?(#.*)?$/, '');
+	    var pkg  = new Package(name, endpoint, this);
+	    this.dependencies[name] = this.dependencies[name] || [];
+	    this.dependencies[name].add(pkg);
+	  }
+	};
+
+	public any function loadJSON() {
+	  var json = path.join(this.cwd, config.json);
+
+	  fs.exists(json, function (exists) {
+	    if (!exists) writeDump(var='Could not find local ' & config.json));
+	    fs.readFile(json, 'utf8', function (err, json) {
+	      if (err) return this.emit('error', err);
+	      this.json    = JSON.parse(json);
+	      this.name    = this.json.name;
+	      this.version = this.json.version;
+	      this.emit('loadJSON');
+	    }.bind(this));
+	  }.bind(this));
+	};
+
+	public any function resolveFromJson() {
+	  // loadJSON
+	  // Resolve dependencies
+	  // Add to dependencies array
+	  // Prune & install
+
+	  this.once('loadJSON', function () {
+
+	    if (!this.json.dependencies) return this.emit('error', new Error('Could not find any dependencies'));
+
+	    async.forEach(Object.keys(this.json.dependencies), function (name, next) {
+	      var endpoint = this.json.dependencies[name];
+	      var pkg      = new Package(name, endpoint, this);
+	      this.dependencies[name] = this.dependencies[name] || [];
+	      this.dependencies[name].push(pkg);
+	      pkg.on('resolve', next).resolve();
+	    }.bind(this), this.emit.bind(this, 'resolveFromJson'));
+
+	  }.bind(this)).loadJSON();
+	};
+
+	public any function getDeepDependencies() {
+	  var result = {};
+
+	  for (var name in this.dependencies) {
+	    this.dependencies[name].forEach(function (pkg) {
+	      result[pkg.name] = result[pkg.name] || [];
+	      result[pkg.name].push(pkg);
+	      pkg.getDeepDependencies().forEach(function (pkg) {
+	        result[pkg.name] = result[pkg.name] || [];
+	        result[pkg.name].push(pkg);
+	      });
+	    });
+	  }
+
+	  return result;
+	};
+
+	public any function prune() {
+	  try {
+	    this.dependencies = prune(this.getDeepDependencies());
+	  } catch (err) {
+	    this.emit('error', err);
+	  }
+	  return this;
+	};
+
+	public any function install() {
+	  async.forEach(Object.keys(this.dependencies), function (name, next) {
+	    this.dependencies[name][0].once('install', next).install();
+	  }.bind(this), this.emit.bind(this, 'install'));
+	  return this;
+	};
 }
