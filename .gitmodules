@@ -4,3 +4,6 @@
 [submodule "foundry_modules/semver"]
 	path = foundry_modules/semver
 	url = https://github.com/joshuairl/semver.git
+[submodule "foundry_modules/UnderscoreCF"]
+	path = foundry_modules/UnderscoreCF
+	url = https://github.com/russplaysguitar/UnderscoreCF.git
