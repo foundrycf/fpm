@@ -13,19 +13,22 @@
 // - end: fired when finished installing
 // ==========================================
 
-component name="Manager" {
+component name="Manager" extends="foundry.core" {
 	variables.Package = require('./package');
 	variables.config = require('./config');
 	variables.prune = require('../util/prune');
-	variables.events = require('events');
+	variables.emitter = require('emitter');
 	variables.async = require('async');
 	variables.console = require('console');
 	variables.path = require('path');
 	variables.fs = require('fs');
 	variables._ = require("UnderscoreCF");
-	this.dependencies = {};
-	this.cwd = getPageContext();
-	this.endpoints = endpoints || [];
+
+	public any function init() {
+		this.dependencies = {};
+		this.cwd = getPageContext();
+		this.endpoints = isDefined("endpoints")? endpoints : require("arrayObj").init();
+	}
 
 	this.emit = events.emit;
 	this.on = events.on;
@@ -59,7 +62,7 @@ component name="Manager" {
 			var name = path.basename(dir);
 
 			this.dependencies[name] = [];
-			this.dependencies[name].push(new Package(name, dir, this));
+			this.dependencies[name].add(new Package(name, dir, this));
 
 		});
 
@@ -67,31 +70,44 @@ component name="Manager" {
 	};
 
 	public any function resolveEndpoints() {
-	  // Iterate through paths
-	  // Add to depedencies array
-	  // Prune & install
+	   // Iterate through paths
+		  // Add to depedencies array
+		  // Prune & install
 
-	  _.forEach(this.endpoints, function (endpoint, next) {
-	    var name = path.basename(endpoint).replace(/(\.git)?(#.*)?$/, '');
-	    var pkg  = new Package(name, endpoint, this);
-	    this.dependencies[name] = this.dependencies[name] || [];
-	    this.dependencies[name].add(pkg);
-	  }
+		  async.forEach(
+		  		//array
+		  		this.endpoints,
+
+		  		//iterator
+				_.bind(function(endpoint, next) {
+					var name = rereplacenocase(path.basename(endpoint),"(\.git)?(##.*)?$",'');
+					var pkg  = new Package(name, endpoint, this);
+					this.dependencies[name] = this.dependencies[name] || [];
+					this.dependencies[name].add(pkg);
+					pkg.on('resolve', next).resolve();
+				}
+				,this), 
+
+				//callback
+				_.bind(this.emit,this, 'resolveEndpoints')
+			);
 	};
 
 	public any function loadJSON() {
 	  var json = path.join(this.cwd, config.json);
 
-	  fs.exists(json, function (exists) {
-	    if (!exists) writeDump(var='Could not find local ' & config.json));
-	    fs.readFile(json, 'utf8', function (err, json) {
-	      if (err) return this.emit('error', err);
-	      this.json    = JSON.parse(json);
-	      this.name    = this.json.name;
-	      this.version = this.json.version;
-	      this.emit('loadJSON');
-	    }.bind(this));
-	  }.bind(this));
+	  fs.exists(
+	  	json, 
+	  	_.bind(function (exists) {
+		    if (!exists) console.log('Could not find local ' & config.json);
+		    _.bind(fs.readFile(json, 'utf8', function (err, json) {
+		      if (err) return this.emit('error', err);
+		      this.json    = JSON.parse(json);
+		      this.name    = this.json.name;
+		      this.version = this.json.version;
+		      this.emit('loadJSON');
+		    },this));
+	  	},this));
 	};
 
 	public any function resolveFromJson() {
@@ -100,19 +116,23 @@ component name="Manager" {
 	  // Add to dependencies array
 	  // Prune & install
 
-	  this.once('loadJSON', function () {
+	  this.once('loadJSON', _.bind(function () {
 
 	    if (!this.json.dependencies) return this.emit('error', new Error('Could not find any dependencies'));
 
-	    async.forEach(Object.keys(this.json.dependencies), function (name, next) {
-	      var endpoint = this.json.dependencies[name];
-	      var pkg      = new Package(name, endpoint, this);
-	      this.dependencies[name] = this.dependencies[name] || [];
-	      this.dependencies[name].push(pkg);
-	      pkg.on('resolve', next).resolve();
-	    }.bind(this), this.emit.bind(this, 'resolveFromJson'));
+	    async.forEach(Object.keys(this.json.dependencies), 
+	    	_.bind(function (name, next) {
+		      var endpoint = this.json.dependencies[name];
+		      var pkg      = new Package(name, endpoint, this);
+		      this.dependencies[name] = this.dependencies[name] || [];
+		      this.dependencies[name].add(pkg);
+		      pkg.on('resolve', next).resolve();
+		    },this), 
 
-	  }.bind(this)).loadJSON();
+		    _.bind(this.emit, this, 'resolveFromJson')
+		   );
+
+	  },this)).loadJSON();
 	};
 
 	public any function getDeepDependencies() {
@@ -121,10 +141,10 @@ component name="Manager" {
 	  for (var name in this.dependencies) {
 	    this.dependencies[name].forEach(function (pkg) {
 	      result[pkg.name] = result[pkg.name] || [];
-	      result[pkg.name].push(pkg);
+	      result[pkg.name].add(pkg);
 	      pkg.getDeepDependencies().forEach(function (pkg) {
 	        result[pkg.name] = result[pkg.name] || [];
-	        result[pkg.name].push(pkg);
+	        result[pkg.name].add(pkg);
 	      });
 	    });
 	  }
@@ -142,9 +162,12 @@ component name="Manager" {
 	};
 
 	public any function install() {
-	  async.forEach(Object.keys(this.dependencies), function (name, next) {
-	    this.dependencies[name][0].once('install', next).install();
-	  }.bind(this), this.emit.bind(this, 'install'));
+	  async.forEach(Object.keys(this.dependencies), 
+	  	_.bind(function (name, next) {
+	   		this.dependencies[name][0].once('install', next).install();
+	  	},this), 
+
+	  	_.bind(this.emit, this, 'install'));
 	  return this;
 	};
 }

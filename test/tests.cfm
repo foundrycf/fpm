@@ -1,0 +1,1 @@
+<cfset mgr = new lib.core.manager() />
