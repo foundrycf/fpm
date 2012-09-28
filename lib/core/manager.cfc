@@ -12,27 +12,25 @@
 // - data: fired when trying to output data
 // - end: fired when finished installing
 // ==========================================
-
-component name="Manager" extends="foundry.core" {
+component name="Manager" extends="foundry.core.emitter" {
 	variables.Package = require('./package');
-	variables.config = require('./config');
+	variables.config = require("./config");
 	variables.prune = require('../util/prune');
 	variables.emitter = require('emitter');
 	variables.async = require('async');
 	variables.console = require('console');
 	variables.path = require('path');
 	variables.fs = require('fs');
-	variables._ = require("UnderscoreCF");
+	variables._ = require("UnderscoreCF").init();
 
-	public any function init() {
+	public any function init(endpoints) {
 		this.dependencies = {};
-		this.cwd = getPageContext();
-		this.endpoints = isDefined("endpoints")? endpoints : require("arrayObj").init();
+		this.cwd = path.dirname(GetBaseTemplatePath());
+		this.endpoints = structKeyExists(arguments,'endpoints')? require("arrayObj").init(arguments.endpoints) : require("arrayObj").init();
+
+		return this;
 	}
 
-	this.emit = events.emit;
-	this.on = events.on;
-	this.once = events.once;
 
 	public any function resolve() {
 	  var resolved = function() {
@@ -44,7 +42,7 @@ component name="Manager" extends="foundry.core" {
 	  };
 
 	  this.once('resolveLocal', function () {
-	    if (this.endpoints.length) {
+	    if (this.endpoints.length()) {
 	      this.once('resolveEndpoints', resolved).resolveEndpoints();
 	    } else {
 	      this.once('resolveFromJson', resolved).resolveFromJson();
@@ -56,10 +54,11 @@ component name="Manager" extends="foundry.core" {
 	};
 
 	public any function resolveLocal() {
-		var dirs = directoryList(path='./' + config.directory + '/',listInfo="path");
+		var dirs = directoryList(path='./' & config.getDirectory() & '/',listInfo="name");
 
-		_.forEach(dirs,function(dir) {
+		_.each(dirs,function(dir) {
 			var name = path.basename(dir);
+			console.log(name);
 
 			this.dependencies[name] = [];
 			this.dependencies[name].add(new Package(name, dir, this));
@@ -71,8 +70,8 @@ component name="Manager" extends="foundry.core" {
 
 	public any function resolveEndpoints() {
 	   // Iterate through paths
-		  // Add to depedencies array
-		  // Prune & install
+	  // Add to depedencies array
+	  // Prune & install
 
 		  async.forEach(
 		  		//array
@@ -94,20 +93,21 @@ component name="Manager" extends="foundry.core" {
 	};
 
 	public any function loadJSON() {
-	  var json = path.join(this.cwd, config.json);
-
+	  var json = path.join(this.cwd, config.getjson());
+	  
 	  fs.exists(
-	  	json, 
-	  	_.bind(function (exists) {
-		    if (!exists) console.log('Could not find local ' & config.json);
-		    _.bind(fs.readFile(json, 'utf8', function (err, json) {
-		      if (err) return this.emit('error', err);
-		      this.json    = JSON.parse(json);
-		      this.name    = this.json.name;
-		      this.version = this.json.version;
-		      this.emit('loadJSON');
-		    },this));
-	  	},this));
+	  	json,
+	  	_.bind(function(exists) {
+		    if (!exists) console.log('Could not find local ' & config.getJson());
+		    _.bind(fs.readFile, json, 'utf8', function (err, json) {
+				      if (structKeyExists(arguments,'err')) return this.emit('error', err);
+				      this.json    = JSON.parse(json);
+				      this.name    = this.json.name;
+				      this.version = this.json.version;
+				      this.emit('loadJSON');
+		    	},this);
+	  	},
+	  	this));
 	};
 
 	public any function resolveFromJson() {

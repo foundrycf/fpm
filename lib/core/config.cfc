@@ -1,4 +1,11 @@
-component {
-	this['directory'] = 'foundry_modules';
-	this['json'] = 'foundry.json';
+component accessors=true {
+	property 
+		name="directory"
+		type="string"  
+		default="foundry_modules";
+	
+	property 
+		type="string" 
+		name="json" 
+		default="foundry.json";
 }

@@ -38,7 +38,7 @@ module.exports = function (paths, options) {
   return emitter;
 };
 
-module.exports.line = function (argv) {
+public any function line(argv) {
   var options  = nopt(optionTypes, shorthand, argv);
   var paths    = options.argv.remain.slice(1);
 
