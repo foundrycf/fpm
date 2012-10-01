@@ -34,20 +34,9 @@ describe('package', function () {
     assert.equal(pkg.gitUrl, 'git@github.com:twitter/flight.git');
   });
 
-  it('Should resolve url when we got redirected', function() {
-    var redirecting_url    = 'http://redirecting-url.com';
-    var redirecting_to_url = 'http://redirected-to-url.com';
-
-    var redirect_scope = nock(redirecting_url)
-      .defaultReplyHeaders({'location': redirecting_to_url + '/jquery.zip'})
-      .get('/jquery.zip')
-      .reply(302);
-
-    var redirect_to_scope = nock(redirecting_to_url)
-      .get('/jquery.zip')
-      .reply(200, "jquery content");
-
-    var pkg = new Package('jquery', redirecting_url + '/jquery.zip');
+  it('Should resolve url when we get redirected', function() {
+ 
+    var pkg = new Package('jquery', 'https://github.com/joshuairl/semver/zipball/master');
 
     pkg.on('resolve', function () {
       assert(pkg.assetUrl);

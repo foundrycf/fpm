@@ -1,52 +1,46 @@
 component name="testPackage" extends="mxunit.framework.testcase" {
+	public void function setUp() {
+		variables._ = new foundry.core.util();
+	}
+
 	public void function Should_resolve_git_URLs_properly() {
 		var pkg = new lib.core.package('jquery', 'git://github.com/jquery/jquery.git');
-		assert.equal(pkg.gitUrl, 'git://github.com/jquery/jquery.git');
+		assertEquals( 'git://github.com/jquery/jquery.git',pkg.gitUrl);
 	}
 
 	public void function Should_resolve_git_HTTP_URLs_properly() {
 		var pkg = new lib.core.package('jquery', 'git+http://example.com/project.git');
-		assert.equal(pkg.gitUrl, 'http://example.com/project.git');
+		assertEquals( 'http://example.com/project.git',pkg.gitUrl);
 	}
 
 	public void function Should_resolve_git_HTTPS_URLs_properly() {
 		var pkg = new lib.core.package('jquery', 'git+https://example.com/project.git');
-		assert.equal(pkg.gitUrl, 'https://example.com/project.git');
+		assertEquals( 'https://example.com/project.git',pkg.gitUrl);
 	}
 
 	public void function Should_resolve_git_URL_tags() {
 		var pkg = new lib.core.package('jquery', 'git://github.com/jquery/jquery.git##v1.0.1');
-		assert.equal(pkg.tag, 'v1.0.1');
+		assertEquals( 'v1.0.1',pkg.tag);
 	}
 
 	public void function Should_resolve_github_urls() {
 		var pkg = new lib.core.package('jquery', 'git@github.com:twitter/flight.git##v1.0.1');
-		assert.equal(pkg.tag, 'v1.0.1');
-		assert.equal(pkg.gitUrl, 'git@github.com:twitter/flight.git');
+		assertEquals( 'v1.0.1',pkg.tag);
+		assertEquals( 'git@github.com:twitter/flight.git',pkg.gitUrl);
 	}
 
-	public void function Should_resolve_url_when_we_got_redirected() {
-		var redirecting_url    = 'http://redirecting-url.com';
-		var redirecting_to_url = 'http://redirected-to-url.com';
+	// public void function Should_resolve_url_when_we_got_redirected() {
+		
+	// 	var pkg = new lib.core.package('jquery', 'https://github.com/joshuairl/semver/zipball/master');
 
-		var redirect_scope = nock(redirecting_url)
-		  .defaultReplyHeaders({'location': redirecting_to_url + '/jquery.zip'})
-		  .get('/jquery.zip')
-		  .reply(302);
+	// 	pkg.on('resolve', function() {
+	// 	  assert(!_.isEmpty(pkg.assetUrl));
+	// 	  //assertEquals( redirecting_to_url + '/jquery.zip',pkg.assetUrl);
+	// 	});
 
-		var redirect_to_scope = nock(redirecting_to_url)
-		  .get('/jquery.zip')
-		  .reply(200, "jquery content");
-
-		var pkg = new lib.core.package('jquery', redirecting_url + '/jquery.zip');
-
-		pkg.on('resolve', function() {
-		  assert(pkg.assetUrl);
-		  assert.equal(pkg.assetUrl, redirecting_to_url + '/jquery.zip');
-		});
-
-		pkg.download();
-	};
+	// 	pkg.download();
+	// 	pkg.emit('resolve');
+	// };
 
 	public void function Should_clone_git_packages() {
 		var pkg = new lib.core.package('jquery', 'git://github.com/maccman/package-jquery.git');
@@ -54,7 +48,7 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 		pkg.on('resolve', function() {
 		  assert(pkg.path);
 		  assert(fs.existsSync(pkg.path));
-		  next();
+		  //next();
 		});
 
 		pkg.on('error', function (err) {
@@ -96,7 +90,7 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 
 		pkg.on('loadJSON', function() {
 		  assert(pkg.json);
-		  assert.equal(pkg.json.name, 'jquery');
+		  assertEquals( 'jquery',pkg.json.name);
 		  next();
 		});
 
