@@ -38,6 +38,10 @@
 	<cffunction name="diff" access="public" output="false" returntype="any">
 		<cfreturn execGit( "diff" )>
 	</cffunction>
+
+	<cffunction name="diff" access="public" output="false" returntype="any">
+		<cfreturn execGit( "diff" )>
+	</cffunction>
 		
 	<cffunction name="log" access="public" output="false" returntype="any" hint="log">
 		<cfargument

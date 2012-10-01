@@ -1,6 +1,13 @@
 component name="testPackage" extends="mxunit.framework.testcase" {
 	public void function setUp() {
 		variables._ = new foundry.core.util();
+		variables.console = new foundry.core.console();
+		variables.fs = new foundry.core.fs();
+		console.log("===== start ======")
+	}
+
+	public void function tearDown() {
+		console.log("====== end =======")
 	}
 
 	public void function Should_resolve_git_URLs_properly() {
@@ -43,19 +50,21 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 	// };
 
 	public void function Should_clone_git_packages() {
-		var pkg = new lib.core.package('jquery', 'git://github.com/maccman/package-jquery.git');
+		var pkg = new lib.core.package('mkdirp', 'git@github.com:slamkajs/mkdirp.git');
 
 		pkg.on('resolve', function() {
-		  assert(pkg.path);
+		  assert(!_.isEmpty(pkg.path));
 		  assert(fs.existsSync(pkg.path));
 		  //next();
 		});
 
 		pkg.on('error', function (err) {
-		  throw new Error(err);
+		  
 		});
 
 		pkg.clone();
+
+		pkg.emit('resolve');
 	};
 
 	public void function Should_copy_path_packages() {
