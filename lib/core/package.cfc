@@ -13,30 +13,29 @@
 // ==========================================
 component name="package" extends="foundry.core.emitter" {
 	public any function init(name, endpoint, manager)  {
+		//super.init();
 		//variables.spawn    = require('child_process').spawn; (same as cfthread?)
 		//variables.https    = require('https');
 		//variables.http     = require('http'); (same as cfhttp?);
 		//variables.fstream  = require('fstream'); maybe not needed?
 		//variables.template = require('../util/template'); not using hogan templates
 		//variables.readJSON = require('../util/read-json');
-		variables.urlUtil      = require('url');
+		variables.urlUtil = require('url');
 		
 		//NEEDED:
-		variables._        = require('UnderscoreCF');
-
-		variables.git = require("../util/git");
+		variables._        = require("util");
+		//variables.git = require("../util/git");
 		variables.mkdirp   = require('mkdirp');
 		variables.emitter  = require('emitter');
+		//variables.semver = createObject("java","org.semver");
 		//variables.rimraf   = require('rimraf'); //not done yet
-		variables.semver   = require('semver');
 		variables.async    = require('async');
 		variables.regexp    = require('regexp');
 		variables.process    = require('process');
-		
+		variables.semver = require("semver").init();
 		variables.path     = require('path');
 		variables.tmp      = require('tmp'); //not done yet
 		variables.fs       = require('fs');
-
 		variables.logger = require("console");
 		variables.config   = require('./config');
 		variables.source   = require('./source');
@@ -79,8 +78,8 @@ component name="package" extends="foundry.core.emitter" {
 				this.gitUrl = (matches[1] || matches[2]) + "://" + matches[3];
 				this.tag    = matches[4];
 
-			// } else if (semver.validRange(endpoint)) {
-			// 	this.tag = endpoint;
+			} else if (semver.validRange(endpoint)) {
+				this.tag = endpoint;
 
 			} else if (RegExp.setPattern("^[\.\/~]\.?[^.]*\.(js|css)").test(endpoint) AND fileExists(endpoint)) {
 				matches = RegExp.match(endpoint);
@@ -102,6 +101,7 @@ component name="package" extends="foundry.core.emitter" {
 				this.name      = replace(name,this.assetType, '');
 
 			} else {
+				writeDump(var=listToArray(endpoint,'##'),abort=true)
 				this.tag = listToArray(endpoint,'##')[2];
 			}
 
@@ -172,8 +172,8 @@ component name="package" extends="foundry.core.emitter" {
 	  var semverParser = new RegExp('(' & semver.expressions.parse.toString().replace("\$?\/\^?", '') & ')');
 	  return {
 	    name: this.name,
-	    main: 'index' + this.assetType,
-	    version: semverParser.exec(this.assetUrl) ? matches[1] : "0.0.0",
+	    main: 'index' & this.assetType,
+	    version: semverParser.match(this.assetUrl) ? matches[1] : "0.0.0",
 	    repository: { type: "asset", url: this.assetUrl }
 	  };
 	};
@@ -312,32 +312,33 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function cache() {
-	  mkdirp.mkdirp(cache, function (err) {
-	    if (structKeyExists(arguments,'err') AND len(arguments.err) GT 0) return this.emit('error', err);
-	    
-	    fs.stat(this.path, function (err) {
-	      if (!structKeyExists(arguments,'err')) {
-	        logger.print('cached' & this.gitUrl);
-	        return this.emit('cache');
-	      }
-	      logger.print('caching' & this.gitUrl)
-	      var theUrl = this.gitUrl;
-	      if (len(process.env("HTTP_PROXY")) GT 0) {
-	        theUrl = rereplace(url,"^git:", 'https:');
-	      }
+		mkdirp.mkdirp(cache, function (err) {
+		    if (structKeyExists(arguments,'err') AND len(arguments.err) GT 0) return this.emit('error', err);
 
-	    try {
-			execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
-			
-		} catch(any err) {
-			logger.print('[FOUNDRY] ' & err.Detail);
-			return this.emit('error');
-		}
-		
-			this.emit('cache');
+			fs.stat(this.path, function (err) {
+				if (!structKeyExists(arguments,'err')) {
+					logger.print('cached ' & this.gitUrl);
+					return this.emit('cache');
+				}
 
+				logger.print('caching' & this.gitUrl)
+				
+				var theUrl = this.gitUrl;
+				if (len(process.env("HTTP_PROXY")) GT 0) {
+					theUrl = rereplace(url,"^git:", 'https:');
+				}
+
+			    try {
+					execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
+					
+				} catch(any err) {
+					logger.print('[FOUNDRY] This package is already cloned and cached!');
+					return this.emit('error');
+				}
+
+				this.emit('cache');
+			});
 		});
-	  });
 	};
 
 	public any function checkout() {

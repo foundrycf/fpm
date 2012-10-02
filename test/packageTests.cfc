@@ -1,8 +1,8 @@
 component name="testPackage" extends="mxunit.framework.testcase" {
 	public void function setUp() {
-		variables._ = new foundry.core.util();
-		variables.console = new foundry.core.console();
-		variables.fs = new foundry.core.fs();
+		util = new foundry.core.util();
+		console = new foundry.core.console();
+		fs = new foundry.core.fs();
 		console.log("===== start ======")
 	}
 
@@ -51,36 +51,20 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 
 	public void function Should_clone_git_packages() {
 		var pkg = new lib.core.package('mkdirp', 'git@github.com:slamkajs/mkdirp.git');
-
-		pkg.on('resolve', function() {
-		  assert(!_.isEmpty(pkg.path));
-		  assert(fs.existsSync(pkg.path));
-		  //next();
-		});
-
-		pkg.on('error', function (err) {
-		  
-		});
-
+			
 		pkg.clone();
 
-		pkg.emit('resolve');
+		assert(!_.isEmpty(pkg.path));
+		assert(fs.existsSync(pkg.path));
 	};
 
 	public void function Should_copy_path_packages() {
-		var pkg = new lib.core.package('jquery', __dirname + '/assets/package-jquery');
-
-		pkg.on('resolve', function() {
-		  assert(pkg.path);
-		  assert(fs.existsSync(pkg.path));
-		  next();
-		});
-
-		pkg.on('error', function (err) {
-		  throw new Error(err);
-		});
+		var pkg = new lib.core.package('jquery', expandPath('/test/assets/package-jquery'));
 
 		pkg.copy();
+
+		assert(pkg.path);
+		assert(fs.existsSync(pkg.path));
 	};
 
 	public void function Should_error_on_clone_fail() {
