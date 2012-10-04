@@ -20,25 +20,25 @@ component name="package" extends="foundry.core.emitter" {
 		//variables.fstream  = require('fstream'); maybe not needed?
 		//variables.template = require('../util/template'); not using hogan templates
 		//variables.readJSON = require('../util/read-json');
-		variables.urlUtil = require('url');
+		variables.urlUtil = new foundry.core.url();
 		
 		//NEEDED:
-		variables._        = require("util").init();
+		variables._        = new foundry.core.util();
 		//variables.git = require("../util/git");
-		variables.mkdirp   = require('mkdirp');
-		variables.emitter  = require('emitter');
+		variables.mkdirp   = new foundry_modules.mkdirp.mkdirp();
+		variables.emitter  = new foundry.core.emitter();
 		//variables.semver = createObject("java","org.semver");
 		//variables.rimraf   = require('rimraf'); //not done yet
-		variables.async    = require('async');
-		variables.regexp    = require('regexp');
-		variables.process    = require('process');
-		variables.semver = require("semver").init();
-		variables.path     = require('path');
-		variables.tmp      = require('tmp'); //not done yet
-		variables.fs       = require('fs');
-		variables.logger = require("console");
+		variables.async    = new foundry_modules.async.async();
+		variables.regexp    = new foundry.core.regexp();
+		variables.process    = new foundry.core.process();
+		variables.semver = new foundry_modules.semver.semver();
+		variables.path     = new foundry.core.path();
+		variables.tmp      = new foundry_modules.tmp.tmp(); //not done yet
+		variables.fs       = new foundry.core.fs();
+		variables.logger = new foundry.core.console();
 		variables.config   = new lib.core.config();
-		variables.source   = require('./source');
+		variables.source   = new lib.core.source();
 
 		this.emit = emitter.emit;
 		var temp = GetTempDirectory();
