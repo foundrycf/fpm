@@ -23,7 +23,7 @@ component name="package" extends="foundry.core.emitter" {
 		variables.urlUtil = require('url');
 		
 		//NEEDED:
-		variables._        = require("util");
+		variables._        = require("util").init();
 		//variables.git = require("../util/git");
 		variables.mkdirp   = require('mkdirp');
 		variables.emitter  = require('emitter');
@@ -37,7 +37,7 @@ component name="package" extends="foundry.core.emitter" {
 		variables.tmp      = require('tmp'); //not done yet
 		variables.fs       = require('fs');
 		variables.logger = require("console");
-		variables.config   = require('./config');
+		variables.config   = new lib.core.config();
 		variables.source   = require('./source');
 
 		this.emit = emitter.emit;
@@ -75,10 +75,10 @@ component name="package" extends="foundry.core.emitter" {
 			} else if (RegExp.setPattern("^(?:(git):|git\+(https?):)\/\/([^##]+)##?(.*)$").test(endpoint)) {
 				matches = RegExp.match(endpoint);
 
-				this.gitUrl = (matches[1] || matches[2]) + "://" + matches[3];
+				this.gitUrl = (structKeyExists(matches,1) || structKeyExists(matches,2)) & "://" & matches[3];
 				this.tag    = matches[4];
 
-			} else if (semver.validRange(endpoint)) {
+			} else if (!_.isEmpty(semver.validRange(endpoint))) {
 				this.tag = endpoint;
 
 			} else if (RegExp.setPattern("^[\.\/~]\.?[^.]*\.(js|css)").test(endpoint) AND fileExists(endpoint)) {
@@ -88,7 +88,7 @@ component name="package" extends="foundry.core.emitter" {
 				this.assetType = path.extname(endpoint);
 				this.name      = replace(name,this.assetType, '');
 
-			} else if (RegExp.setPattern("^[\.\/~]").test(endpoint) AND fileExists(endpoint)) {
+			} else if (RegExp.setPattern("^[\.\/~]").test(endpoint)) {
 				matches = RegExp.match(endpoint);
 
 				this.path = path.resolve(endpoint);
@@ -101,7 +101,7 @@ component name="package" extends="foundry.core.emitter" {
 				this.name      = replace(name,this.assetType, '');
 
 			} else {
-				writeDump(var=listToArray(endpoint,'##'),abort=true)
+				writeDump(var=endpoint,abort=true);
 				this.tag = listToArray(endpoint,'##')[2];
 			}
 
@@ -164,7 +164,7 @@ component name="package" extends="foundry.core.emitter" {
 	public any function cleanUpLocal() {
 	  if (this.gitUrl) this.json.repository = { type: "git", url: this.gitUrl };
 	  if (this.assetUrl) this.json = this.generateAssetJSON();
-	  fs.writeFile(path.join(this.localPath, config.json), JSON.stringify(this.json, null, 2));
+	  fs.writeFile(path.join(this.localPath, config.getJson()), JSON.stringify(this.json, null, 2));
 	  rimraf(path.join(this.localPath, '.git'), this.emit.bind(this, 'install'));
 	};
 
@@ -189,11 +189,11 @@ component name="package" extends="foundry.core.emitter" {
 
 	// Private
 	public any function loadJSON(name) {
-	  var pathname = (structKeyExists(arguments,'name')? name : ( structKeyExists(this,'assetType') ? 'index' & this.assetType : config.json ));
+		var pathname = (structKeyExists(arguments,'name')? name : ( structKeyExists(this,'assetType') ? 'index' & this.assetType : config.getJson() ));
 
 	  readJSON(path.join(this.path, pathname), function (err, json) {
 
-	    if (err) {
+	    if (structKeyExists(arguments,'err')) {
 	      if (!name) return this.loadJSON('package.json');
 	      return this.assetUrl ? this.emit('loadJSON') : this.path && this.on('describeTag', function (tag) {
 	        this.version = this.tag = semver.clean(tag);
@@ -248,7 +248,7 @@ component name="package" extends="foundry.core.emitter" {
 
 	  tmp.dir(function (err, tmpPath) {
 	    fs.stat(this.path, function (err, stats) {
-	      if (err) return this.emit('error', err);
+	      if (structKeyExists(arguments,'err')) return this.emit('error', err);
 
 	      if (this.assetType) {
 	        return fs.readFile(this.path, function (err, data) {

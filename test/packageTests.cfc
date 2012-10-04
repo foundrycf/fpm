@@ -1,6 +1,6 @@
 component name="testPackage" extends="mxunit.framework.testcase" {
 	public void function setUp() {
-		util = new foundry.core.util();
+		_ = new foundry.core.util();
 		console = new foundry.core.console();
 		fs = new foundry.core.fs();
 		console.log("===== start ======")
@@ -55,7 +55,7 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 		pkg.clone();
 
 		assert(!_.isEmpty(pkg.path));
-		assert(fs.existsSync(pkg.path));
+		assert(directoryExists(pkg.path));
 	};
 
 	public void function Should_copy_path_packages() {
@@ -63,23 +63,22 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 
 		pkg.copy();
 
-		assert(pkg.path);
-		assert(fs.existsSync(pkg.path));
+		assert(!_.isEmpty(pkg.path));
+		assert(directoryExists(pkg.path));
 	};
 
 	public void function Should_error_on_clone_fail() {
 		var pkg = new lib.core.package('random', 'git://example.com');
 
 		pkg.on('error', function (err) {
-		  assert(err);
-		  next();
+		  assert(structKeyExists(arguments,'err'));
 		});
 
 		pkg.clone();
 	};
 
 	public void function Should_load_correct_json() {
-		var pkg = new lib.core.package('jquery', __dirname + '/assets/package-jquery');
+		var pkg = new lib.core.package('jquery', expandPath("/test/assets/package-jquery"));
 
 		pkg.on('loadJSON', function() {
 		  assert(pkg.json);
@@ -91,7 +90,7 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 	};
 
 	public void function Should_resolve_JSON_dependencies() {
-		var pkg = new lib.core.package('project', __dirname + '/assets/project');
+		var pkg = new lib.core.package('project', expandPath("/test//assets/project"));
 
 		pkg.on('resolve', function() {
 		  var deps = _.pluck(pkg.getDeepDependencies(), 'name');
