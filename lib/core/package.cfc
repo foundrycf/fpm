@@ -27,10 +27,9 @@ component name="package" extends="foundry.core.emitter" {
 		//variables.git = require("../util/git");
 		variables.mkdirp   = new foundry_modules.mkdirp.mkdirp();
 		variables.emitter  = new foundry.core.emitter();
-		//variables.semver = createObject("java","org.semver");
 		//variables.rimraf   = require('rimraf'); //not done yet
 		variables.async    = new foundry_modules.async.async();
-		variables.regexp    = new foundry.core.regexp();
+		variables.regexp    = createObject("component","foundry.core.regexp");
 		variables.process    = new foundry.core.process();
 		variables.semver = new foundry_modules.semver.semver();
 		variables.path     = new foundry.core.path();

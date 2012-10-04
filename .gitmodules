@@ -7,9 +7,6 @@
 [submodule "foundry_modules/UnderscoreCF"]
 	path = foundry_modules/UnderscoreCF
 	url = https://github.com/russplaysguitar/UnderscoreCF.git
-[submodule "foundry_modules/tmp"]
-	path = foundry_modules/tmp
-	url = git@github.com:joshuairl/tmp.git
 [submodule "foundry_modules/mkdirp"]
 	path = foundry_modules/mkdirp
 	url = git@github.com:slamkajs/mkdirp.git
