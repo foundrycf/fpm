@@ -29,11 +29,10 @@ component name="package" extends="foundry.core.emitter" {
 		variables.emitter  = new foundry.core.emitter();
 		//variables.rimraf   = require('rimraf'); //not done yet
 		variables.async    = new foundry_modules.async.async();
-		variables.regexp    = createObject("component","foundry.core.regexp");
 		variables.process    = new foundry.core.process();
 		variables.semver = new foundry_modules.semver.semver();
 		variables.path     = new foundry.core.path();
-		variables.tmp      = new foundry_modules.tmp.tmp(); //not done yet
+		variables.tmp      = new foundry_modules.tmp.index(); //not done yet
 		variables.fs       = new foundry.core.fs();
 		variables.logger = new foundry.core.console();
 		variables.config   = new lib.core.config();
@@ -58,21 +57,28 @@ component name="package" extends="foundry.core.emitter" {
 		this.name         = arguments.name;
 		this.manager      = arguments.manager;
 
-		if (structKeyExists(arguments,'endpoint')) {
-		  	var RegExp = new foundry.core.regexp("^(.*\.git)$");
+		this.expressions = {
+			"gitPlain":new foundry.core.regexp("^(.*\.git)$"),
+			"gitSemver":new foundry.core.regexp("^(.*\.git)##(.*)$"),
+			"gitAdvanced":new foundry.core.regexp("^(?:(git):|git\+(https?):)\/\/([^\\]+)##?(.*)$"),
+			"jscss":new foundry.core.regexp("^[\.\/~]\.?[^.]*\.(js|css)"),
+			"dir":new foundry.core.regexp("^[\.\/~]"),
+			"https":new foundry.core.regexp("^https?:\/\/")
+		}
 
-			if (RegExp.test(endpoint)) {
-				matches = RegExp.match(endpoint);
+		if (structKeyExists(arguments,'endpoint')) {
+			if (this.expressions.gitPlain.test(endpoint)) {
+				matches = this.expressions.gitPlain.match(endpoint);
 				this.gitUrl = rereplace(matches[1],"^git\+",'');
 				this.tag    = false;
 
-			} else if (RegExp.setPattern("^(.*\.git)##(.*)$").test(endpoint)) {
-				matches = RegExp.match(endpoint);
+			} else if (this.expressions.gitSemver.test(endpoint)) {
+				matches = this.expressions.gitSemver.match(endpoint);
 				this.tag    = matches[2];
 				this.gitUrl = rereplace(matches[1],"^git\+",'');
 
-			} else if (RegExp.setPattern("^(?:(git):|git\+(https?):)\/\/([^##]+)##?(.*)$").test(endpoint)) {
-				matches = RegExp.match(endpoint);
+			} else if ((this.expressions.gitAdvanced.test(endpoint))) {
+				matches = this.expressions.gitAdvanced.match(endpoint);
 
 				this.gitUrl = (structKeyExists(matches,1) || structKeyExists(matches,2)) & "://" & matches[3];
 				this.tag    = matches[4];
@@ -80,27 +86,27 @@ component name="package" extends="foundry.core.emitter" {
 			} else if (!_.isEmpty(semver.validRange(endpoint))) {
 				this.tag = endpoint;
 
-			} else if (RegExp.setPattern("^[\.\/~]\.?[^.]*\.(js|css)").test(endpoint) AND fileExists(endpoint)) {
-				matches = RegExp.match(endpoint);
+			} else if ((this.expressions.jscss.test(endpoint) AND fileExists(endpoint))) {
+				matches = this.expressions.jscss.match(endpoint);
 
 				this.path      = path.resolve(endpoint);
 				this.assetType = path.extname(endpoint);
 				this.name      = replace(name,this.assetType, '');
 
-			} else if (RegExp.setPattern("^[\.\/~]").test(endpoint)) {
-				matches = RegExp.match(endpoint);
+			} else if ((this.expressions.dir.test(endpoint))) {
+				matches = this.expressions.dir.match(endpoint);
 
 				this.path = path.resolve(endpoint);
 
-			} else if (RegExp.setPattern("^https?:\/\/").test(endpoint)) {
-				matches = RegExp.match(endpoint);
+			} else if ((this.expressions.https.test(endpoint))) {
+				matches = this.expressions.https.match(endpoint);
 
 				this.assetUrl  = endpoint;
 				this.assetType = path.extname(endpoint);
 				this.name      = replace(name,this.assetType, '');
 
 			} else {
-				writeDump(var=endpoint,abort=true);
+				//writeDump(var=endpoint,abort=true);
 				this.tag = listToArray(endpoint,'##')[2];
 			}
 
@@ -422,7 +428,8 @@ component name="package" extends="foundry.core.emitter" {
 	      });
 	      this.emit('versions', versions);
 	    });
-	  }).fetch();
+	  });
+	  this.fetch();
 	};
 
 	public any function fetch() {

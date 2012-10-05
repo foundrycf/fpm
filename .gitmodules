@@ -10,3 +10,6 @@
 [submodule "foundry_modules/mkdirp"]
 	path = foundry_modules/mkdirp
 	url = git@github.com:slamkajs/mkdirp.git
+[submodule "foundry_modules/tmp"]
+	path = foundry_modules/tmp
+	url = git://github.com/joshuairl/tmp.git

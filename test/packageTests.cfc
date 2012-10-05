@@ -59,7 +59,7 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 	};
 
 	public void function Should_copy_path_packages() {
-		var pkg = new lib.core.package('jquery', expandPath('/test/assets/package-jquery'));
+		var pkg = new lib.core.package('jquery', '/test/assets/package-jquery');
 
 		pkg.copy();
 
@@ -83,7 +83,6 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 		pkg.on('loadJSON', function() {
 		  assert(pkg.json);
 		  assertEquals( 'jquery',pkg.json.name);
-		  next();
 		});
 
 		pkg.loadJSON();
@@ -95,18 +94,16 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 		pkg.on('resolve', function() {
 		  var deps = _.pluck(pkg.getDeepDependencies(), 'name');
 		  assert.deepEqual(_.uniq(deps), ["package-bootstrap", "jquery-ui", "jquery"]);
-		  next();
 		});
 
 		pkg.resolve();
 	};
 
 	public void function Should_error_when_copying_fails_from_non_existing_path() {
-		var pkg = new lib.core.package('project', __dirname + '/assets/project-non-existent');
+		var pkg = new lib.core.package('project', '/test/assets/project-non-existent');
 
 		pkg.on('error', function (err) {
 		  assert(err);
-		  next();
 		});
 
 		pkg.resolve();
@@ -121,7 +118,7 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 		pkg.on('install',function() {
 		  assert(fs.existsSync(pkg.localPath));
 		  rimraf(config.directory, function(err){
-		    next();
+	
 		  });
 		});
 		pkg.clone();
