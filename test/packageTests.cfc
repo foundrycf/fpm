@@ -59,10 +59,11 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 	};
 
 	public void function Should_copy_path_packages() {
-		var pkg = new lib.core.package('jquery', '/test/assets/package-jquery');
+		console.print("Should_copy_path_packages");
+		var pkg = new lib.core.package('jquery', expandPath('/test/assets/package-jquery'));
 
 		pkg.copy();
-
+		console.print("pkg.path: " & serialize(pkg.path));
 		assert(!_.isEmpty(pkg.path));
 		assert(directoryExists(pkg.path));
 	};
@@ -78,49 +79,44 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 	};
 
 	public void function Should_load_correct_json() {
-		var pkg = new lib.core.package('jquery', expandPath("/test/assets/package-jquery"));
-
-		pkg.on('loadJSON', function() {
-		  assert(pkg.json);
-		  assertEquals( 'jquery',pkg.json.name);
-		});
+		var pkg = new lib.core.package('async', expandPath("/test/assets/async"));
 
 		pkg.loadJSON();
+
+		assert(!_.isEmpty(pkg.json));
+		assertEquals( 'async',pkg.json.name);
 	};
 
 	public void function Should_resolve_JSON_dependencies() {
-		var pkg = new lib.core.package('project', expandPath("/test//assets/project"));
-
-		pkg.on('resolve', function() {
-		  var deps = _.pluck(pkg.getDeepDependencies(), 'name');
-		  assert.deepEqual(_.uniq(deps), ["package-bootstrap", "jquery-ui", "jquery"]);
-		});
+		var pkg = new lib.core.package('semver', expandPath("/test/assets/semver"));
 
 		pkg.resolve();
+
+		var deps = _.pluck(pkg.getDeepDependencies(), 'name');
+		assertEquals(["UnderscoreCF"], _.uniq(deps));
 	};
 
 	public void function Should_error_when_copying_fails_from_non_existing_path() {
-		var pkg = new lib.core.package('project', '/test/assets/project-non-existent');
-
-		pkg.on('error', function (err) {
-		  assert(err);
-		});
-
-		pkg.resolve();
+		var pkg = new lib.core.package('project', expandPath('/test/assets/project-non-existent'));
+		try {
+			pkg.resolve();
+		} catch(any err) {
+			assert(isDefined("err"),err.message);	
+		}
 	};
 
 	public void function Should_copy_files_from_temp_folder_to_local_path() {
-		var pkg = new lib.core.package('jquery', 'git://github.com/maccman/package-jquery.git');
+		var pkg = new lib.core.package('fpm-test-module', 'git://github.com/joshuairl/fpm-test-module.git');
 
-		pkg.on('resolve', function() {
-		  pkg.install();
-		});
-		pkg.on('install',function() {
-		  assert(fs.existsSync(pkg.localPath));
-		  rimraf(config.directory, function(err){
-	
-		  });
-		});
-		pkg.clone();
+		// pkg.on('resolve', function() {
+		  
+		// });
+
+		// pkg.on('install',function() {
+		  
+		// });
+		pkg.fetch();
+		//pkg.clone();
+		//pkg.install();
 	};
 }
