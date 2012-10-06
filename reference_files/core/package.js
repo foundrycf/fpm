@@ -169,7 +169,7 @@ Package.prototype.uninstall = function () {
 // Private
 Package.prototype.loadJSON = function (name) {
   var pathname = name || ( this.assetType ? 'index' + this.assetType : config.json );
-
+  console.print("Loading Foundry.json...");
   readJSON(path.join(this.path, pathname), function (err, json) {
 
     if (err) {
@@ -285,7 +285,11 @@ Package.prototype.clone = function () {
   template('action', { name: 'cloning', shizzle: this.gitUrl }).on('data', this.emit.bind(this, 'data'));
   this.path = path.resolve(cache, this.name);
   this.once('cache', function () {
-    this.once('loadJSON', this.copy.bind(this)).checkout();
+    
+      this.copy();
+    this.once('loadJSON', function() {
+      this.checkout();
+    });
   }.bind(this)).cache();
 }
 

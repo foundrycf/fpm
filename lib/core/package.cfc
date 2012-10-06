@@ -66,6 +66,8 @@ component name="package" extends="foundry.core.emitter" {
 			"https":new foundry.core.regexp("^https?:\/\/")
 		}
 
+		this.localpath = path.join(expandPath('/'), 'foundry_modules', this.name);
+
 		if (structKeyExists(arguments,'endpoint')) {
 			if (this.expressions.gitPlain.test(endpoint)) {
 				logger.print('endpoint: gitPlain');
@@ -152,13 +154,13 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function install() {
-	  if (path.resolve(this.path) == this.localPath) return this.emit('install');
-	  mkdirp(path.dirname(this.localPath), function (err) {
-	    if (err) return this.emit('error', err);
+		//if (path.resolve(this.path) == this.localPath) return this.emit('install');
+	  mkdirp.mkdirp(path.dirname(this.localPath), function (err) {
+	    if (structKeyExists(arguments,'err')) return this.emit('error', err);
 	    rimraf(this.localPath, function (err) {
-	      if (err) return this.emit('error', err);
+	      if (structKeyExists(arguments,'err')) return this.emit('error', err);
 	      return fs.rename(this.path, this.localPath, function (err) {
-	        if (!err) return this.cleanUpLocal();
+	        if (!structKeyExists(arguments,'err')) return this.cleanUpLocal();
 	        fstream.Reader(this.path)
 	          .on('error', this.emit.bind(this, 'error'))
 	          .on('end', rimraf.bind(this, this.path, this.cleanUpLocal))
@@ -201,11 +203,12 @@ component name="package" extends="foundry.core.emitter" {
 	// Private
 	public any function loadJSON() {
 		//read json
+		console.print("Loading Foundry.json...");
 		var configFile = path.join(this.path, 'foundry.json');
 		var configContent = deserializeJson(fileRead(configFile));
 
 		var config = new foundry.core.config(configContent);
-		var m = Path.resolve(Path.dirname(configFile), config.main);
+		var m = Path.resolve(Path.dirname(configFile), structKeyExists(config,'main')? config.main : '');
 
 	    this.json    = configContent;
 	    this.name    = this.json.name;
@@ -304,6 +307,7 @@ component name="package" extends="foundry.core.emitter" {
 	  	//}
 	  }
 
+	  this.resolve();
 	  // for(dep in dependencies) {
 	  // 	thread name="fpm-dep-#dep#" action="join" {}
 	  // }
@@ -322,8 +326,11 @@ component name="package" extends="foundry.core.emitter" {
 		
 		this.once('cache', function() {
 			console.print("Caching... done.");
-			this.once('loadJSON', this.copy);
-			this.checkout();
+
+				this.checkout();
+				this.copy();
+			this.once('loadJSON', function() {
+			});
 		});
 
 		this.cache();
@@ -347,8 +354,9 @@ component name="package" extends="foundry.core.emitter" {
 				}
 
 			    try {
-					execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
-					
+					//execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
+					cp = new foundry.core.childprocess("git",["clone","#theUrl#"],{ cwd: javacast("string",this.path)});
+					cp.exec();
 				} catch(any err) {
 					logger.print('Cloning... already exists.');
 					return this.emit('error');
@@ -386,7 +394,8 @@ component name="package" extends="foundry.core.emitter" {
 				logger.print("Checkout... #this.name# ## #this.tag#");
 
 				try {
-					execute name="git" arguments="checkout -b #this.tag# #this.tag#" timeout="10" variable="cp";
+					cp = new foundry.core.childprocess("git",["checkout","-b","#this.tag#","#this.tag#"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+					cp.exec();
 					
 				} catch(any err) {
 					console.print(err.message);
@@ -410,7 +419,8 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function describeTag() {
-		execute name="git" arguments="describe --always --tag #path.resolve(cache, this.name)#" timeout="10" variable="cp";
+		cp = new foundry.core.childprocess("git",["describe","--always","--tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+			cp.exec();
 
 		var tag = '';
 
@@ -430,26 +440,28 @@ component name="package" extends="foundry.core.emitter" {
 		console.print("Version check...");
 		
 		this.on('fetch', function () {
-				execute name="git" arguments="tag #path.resolve(cache, this.name)#" timeout="10" variable="cp";
 
-				var versions = '';
+			cp = new foundry.core.childprocess("git",["tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+			cp.exec();
 
-				// cp.stdout.setEncoding('utf8');
-				// cp.stdout.on('data',  function (data) {
-				// 	versions &= data;
-				// });
+			var versions = '';
 
-				versions = versions.split("\n");
-				versions = versions.filter(function (ver) {
+			// cp.stdout.setEncoding('utf8');
+			// cp.stdout.on('data',  function (data) {
+			// 	versions &= data;
+			// });
+
+			versions = versions.split("\n");
+			versions = _.filter(versions,function (ver) {
+				//console.print("version filter: " & serialize(ver));
 				return semver.valid(ver);
 
 
 				versions = versions.sort(function (a, b) {
 					return semver.gt(a, b) ? -1 : 1;
 				});
-
-				this.emit('versions', versions);
-		});
+				this.emit('versions', this.versions);
+			});
 		});
 	 	
 	 	//go fetch! ruff ruff!
@@ -458,9 +470,10 @@ component name="package" extends="foundry.core.emitter" {
 
 	public any function fetch() {
 		console.print("Fetch... #path.resolve(cache, this.name)#")
-		cp = new foundry.core.childprocess("git",["fetch"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+		//// 
+		cp = new foundry.core.childprocess("git",["fetch"],{ 'cwd': path.resolve(cache,this.name) });
 		cp.exec();
-		cp.close();
+		//cp.close();
 		// /writeDump(var=Runtime.exec(),abort=true);
 	 	// try {
 
@@ -471,9 +484,9 @@ component name="package" extends="foundry.core.emitter" {
 	 	
 
 	  // cp.on('close', function (code) {
-	  //   if (code != 0) return this.emit('error', logger.error('Git status: ' + code));
-	  //   this.emit('fetch');
+	  //   if (code != 0) return this.emit('error', logger.error('Git status: ' + code));  
 	  // });
+		this.emit('fetch');
 	};
 
 	public any function fetchURL() {

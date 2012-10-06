@@ -107,16 +107,16 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 
 	public void function Should_copy_files_from_temp_folder_to_local_path() {
 		var pkg = new lib.core.package('fpm-test-module', 'git://github.com/joshuairl/fpm-test-module.git');
+		//pkg.resolve();
+		pkg.on('resolve', function () {
+	      pkg.install();
+	    });
+	    pkg.on('install',function () {
+	      assert(directoryExists(pkg.localPath));
+	      directoryDelete(config.directory);
+	    });
 
-		// pkg.on('resolve', function() {
-		  
-		// });
-
-		// pkg.on('install',function() {
-		  
-		// });
-		pkg.fetch();
-		//pkg.clone();
-		//pkg.install();
+		pkg.clone();
+		//pkg.fetch();
 	};
 }
