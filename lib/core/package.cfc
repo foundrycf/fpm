@@ -327,10 +327,11 @@ component name="package" extends="foundry.core.emitter" {
 		this.once('cache', function() {
 			console.print("Caching... done.");
 
-				this.checkout();
-				this.copy();
 			this.once('loadJSON', function() {
+				this.copy();
 			});
+			
+			this.checkout();
 		});
 
 		this.cache();
@@ -355,9 +356,10 @@ component name="package" extends="foundry.core.emitter" {
 
 			    try {
 					//execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
-					cp = new foundry.core.childprocess("git",["clone","#theUrl#"],{ cwd: javacast("string",this.path)});
+					cp = new foundry.core.childprocess("git",["clone","#theUrl#"],{ cwd: path.dirname(this.path)});
 					cp.exec();
 				} catch(any err) {
+					writeDump(var=err,abort=true);
 					logger.print('Cloning... already exists.');
 					return this.emit('error');
 				}
