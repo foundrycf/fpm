@@ -30,6 +30,7 @@ component name="package" extends="foundry.core.emitter" {
 		variables.console 	= require("console");
 		variables.childprocess = require("childprocess");
 		variables.urlUtil = require("url");
+		
 
 		variables.config   = new lib.core.config();
 		variables.source   = new lib.core.source();
