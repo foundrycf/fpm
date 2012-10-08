@@ -11,34 +11,27 @@
 //  - error: fired on all errors
 //  - data: fired when trying to output data
 // ==========================================
-component name="package" extends="foundry.core.emitter" {
-	public any function init(name, endpoint, manager)  {
-		//super.init();
-		//variables.spawn    = require('child_process').spawn; (same as cfthread?)
-		//variables.https    = require('https');
-		//variables.http     = require('http'); (same as cfhttp?);
-		//variables.fstream  = require('fstream'); maybe not needed?
-		//variables.template = require('../util/template'); not using hogan templates
-		//variables.readJSON = require('../util/read-json');
-		variables.urlUtil = new foundry.core.url();
-		
-		//NEEDED:
-		variables._        = new foundry.core.util();
-		//variables.git = require("../util/git");
-		variables.mkdirp   = new foundry_modules.mkdirp.mkdirp();
-		variables.emitter  = new foundry.core.emitter();
-		//variables.rimraf   = require('rimraf'); //not done yet
-		variables.async    = new foundry_modules.async.async();
-		variables.process    = new foundry.core.process();
-		variables.semver = new foundry_modules.semver.semver();
-		variables.path     = new foundry.core.path();
-		variables.tmp      = new foundry_modules.tmp.index(); //not done yet
-		variables.fs       = new foundry.core.fs();
-		variables.logger = new foundry.core.console();
+component name="package" {
+	variables.urlUtil = new foundry.core.url();
+
+	//NEEDED:
+	variables._        = new foundry.core.util();
+	//variables.git = require("../util/git");
+	variables.mkdirp   = new foundry_modules.mkdirp.mkdirp();
+	//variables.rimraf   = require('rimraf'); //not done yet
+	variables.async    = new foundry_modules.async.async();
+	variables.process    = new foundry.core.process();
+	variables.semver = new foundry_modules.semver.semver();
+	variables.path     = new foundry.core.path();
+	variables.tmp      = new foundry_modules.tmp.index(); //not done yet
+	variables.fs       = new foundry.core.fs();
+	variables.console = new foundry.core.console();
+	variables.childprocess = new foundry.core.childProcess();
+	
+	public any function init(name, endpoint, manager, output = "console")  {
 		variables.config   = new lib.core.config();
 		variables.source   = new lib.core.source();
-
-		this.emit = emitter.emit;
+		variables.outputMode = arguments.output;
 		var temp = GetTempDirectory();
 		
 		var home = "";
@@ -70,31 +63,31 @@ component name="package" extends="foundry.core.emitter" {
 
 		if (structKeyExists(arguments,'endpoint')) {
 			if (this.expressions.gitPlain.test(endpoint)) {
-				logger.print('endpoint: gitPlain');
+				//logger.print('endpoint: gitPlain');
 				matches = this.expressions.gitPlain.match(endpoint);
-				logger.print('matches: ' & serialize(matches));
+				//logger.print('matches: ' & serialize(matches));
 				this.gitUrl = rereplace(matches[1],"^git\+",'');
 				this.tag    = false;
 
 			} else if (this.expressions.gitSemver.test(endpoint)) {
-				logger.print('endpoint: gitSemver');
+				//logger.print('endpoint: gitSemver');
 				matches = this.expressions.gitSemver.match(endpoint);
 				this.tag    = matches[2];
 				this.gitUrl = rereplace(matches[1],"^git\+",'');
 
 			} else if ((this.expressions.gitAdvanced.test(endpoint))) {
-				logger.print('endpoint: gitAdvanced');
+				//logger.print('endpoint: gitAdvanced');
 				matches = this.expressions.gitAdvanced.match(endpoint);
 
 				this.gitUrl = (structKeyExists(matches,1) || structKeyExists(matches,2)) & "://" & matches[3];
 				this.tag    = matches[4];
 
 			} else if (!_.isEmpty(semver.validRange(endpoint))) {
-				logger.print('endpoint: semver');
+				//logger.print('endpoint: semver');
 				this.tag = endpoint;
 
 			} else if ((this.expressions.jscss.test(endpoint) AND fileExists(endpoint))) {
-				logger.print('endpoint: jscss');
+				//logger.print('endpoint: jscss');
 				matches = this.expressions.jscss.match(endpoint);
 
 				this.path      = path.resolve(endpoint);
@@ -102,13 +95,13 @@ component name="package" extends="foundry.core.emitter" {
 				this.name      = replace(name,this.assetType, '');
 
 			} else if ((this.expressions.dir.test(endpoint))) {
-				logger.print('endpoint: dir');
+				//logger.print('endpoint: dir');
 				matches = this.expressions.dir.match(endpoint);
 
 				this.path = path.resolve(endpoint);
 
 			} else if ((this.expressions.https.test(endpoint))) {
-				logger.print('endpoint: https');
+				//logger.print('endpoint: https');
 				matches = this.expressions.https.match(endpoint);
 
 				this.assetUrl  = endpoint;
@@ -116,7 +109,7 @@ component name="package" extends="foundry.core.emitter" {
 				this.name      = replace(name,this.assetType, '');
 
 			} else {
-				logger.print('endpoint: other');
+				//logger.print('endpoint: other');
 				//writeDump(var=endpoint,abort=true);
 				this.tag = listToArray(endpoint,'##')[2];
 			}
@@ -139,7 +132,8 @@ component name="package" extends="foundry.core.emitter" {
 	  } else if (isDefined("this.path")) {
 	    this.copy();
 	  } else {
-	    this.once('lookup', this.clone).lookup();
+	    this.lookup();
+	    this.clone();
 	  }
 
 	  return this;
@@ -147,9 +141,9 @@ component name="package" extends="foundry.core.emitter" {
 
 	public any function lookup() {
 	  source.lookup(this.name, function (err, url) {
-	    if (err) return this.emit('error', err);
+	    if (err) return print("error", err.message);
 	    this.gitUrl = url;
-	    this.emit('lookup');
+	    //this.emit('lookup');
 	  });
 	};
 
@@ -192,33 +186,36 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function uninstall() {
-	  logger.print("uninstalling #this.path#");
+	  print("uninstalling",this.path);
 	  
 	  rimraf(this.path, function (err) {
-	    if (err) return this.emit('error', err);
-	    this.emit.bind(this, 'uninstall');
+	    
 	  });
 	};
 
 	// Private
 	public any function loadJSON() {
+		console.info("[START] LOAD JSON");
 		//read json
-		console.print("Loading Foundry.json...");
+		print("reading",path.join(this.path, 'foundry.json'));
 		var configFile = path.join(this.path, 'foundry.json');
+		console.info("configPath -> #configFile#");
 		var configContent = deserializeJson(fileRead(configFile));
+		console.info("configContent -> #serialize(configFile)#");
 
 		var config = new foundry.core.config(configContent);
 		var m = Path.resolve(Path.dirname(configFile), structKeyExists(config,'main')? config.main : '');
 
+		console.info("main path -> #m#");
 	    this.json    = configContent;
 	    this.name    = this.json.name;
 	    this.version = this.json.version;
 
-	    this.emit('loadJSON');
+		console.info("[END] LOAD JSON");
 	};
 
 	public any function download() {
-		logger.print("downloading #this.assetUrl#");
+		print("downloading",this.assetUrl);
 		var src  = urlUtil.parse(this.assetUrl);
 		var req  = new http();
 		req.setUrl(this.assetUrl);
@@ -248,34 +245,30 @@ component name="package" extends="foundry.core.emitter" {
 
 			file.close();
 
-			this.once('loadJSON', this.addDependencies);
 			this.loadJSON();
+			this.addDependencies();
 		});
 	};
 
 	public any function copy() {
-		logger.print('copying #this.path#');
+
+		print('copying',this.path);
 
 		tmp.dir(function (err, tmpPath) {
-		if(!_.isEmpty(err)) {
-		console.print('tmp err: ' & serialize(err));
-		}
-
-		console.print("tmp path: " & serialize(tmpPath));
-		// if (this.assetType) {
-		//        return fs.readFile(this.path, function (err, data) {
-		//          fs.writeFile(path.join((this.path = tmpPath), 'index' + this.assetType), data, function () {
-		//            this.once('loadJSON', this.addDependencies).loadJSON();
-		//          });
-		//        });
-		//      }
-		fs.copyDir(this.path,tmpPath);
+			console.info("Temp Path: " & tmpPath);
+			// if (this.assetType) {
+			//        return fs.readFile(this.path, function (err, data) {
+			//          fs.writeFile(path.join((this.path = tmpPath), 'index' + this.assetType), data, function () {
+			//            this.once('loadJSON', this.addDependencies).loadJSON();
+			//          });
+			//        });
+			//      }
+			fs.copyDir(this.path,tmpPath);
 		
-		this.once('loadJSON', this.addDependencies);
-
-		this.loadJSON()
-		//   fs.stat(this.path, function (err, stats) {
-		//     if (structKeyExists(arguments,'err') AND !_.isEmpty(err)) return this.emit('error', err);
+			this.loadJSON();
+			this.addDependencies();
+			//   fs.stat(this.path, function (err, stats) {
+			//     if (structKeyExists(arguments,'err') AND !_.isEmpty(err)) return this.emit('error', err);
 		});
 	};
 
@@ -289,30 +282,26 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function addDependencies() {
+	  console.info("[START] DEPENDENCIES");
 	  var dependencies = structKeyExists(this.json,'dependencies')? this.json.dependencies : {};
 
-	  var tick=0;
-	  
 	  for(dep in dependencies) {
 	  	var ep = dependencies[dep];
-	  	tick++;
-	  	//thread name="fpm-dep-#dep#" depname=dep endpoint=ep action="run" {
-  		var logger = new foundry.core.console();
-		
-  		try {
-		this.dependencies[dep] = new lib.core.Package(dep, ep, this);
-		} catch (any err) {
-			writeDump(var=err,abort=true);
-		}
-	  	//}
+	  	console.info("dep: " & dep);
+  		this.dependencies[dep] = new lib.core.Package(dep, ep);
+
+  		this.dependencies[dep].resolve();
 	  }
 
-	  this.resolve();
+		//writeDump(var=this,abort=true);
+	  //this.resolve();
 	  // for(dep in dependencies) {
 	  // 	thread name="fpm-dep-#dep#" action="join" {}
 	  // }
 
 	  //async.parallel(callbacks, this.emit.bind(this, 'resolve'));
+
+	  console.info("[END] DEPENDENCIES");
 	};
 
 	public any function exists(callback) {
@@ -320,21 +309,11 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function clone() {
-		logger.print('Cloning... #this.gitUrl#');
-
 		this.path = path.resolve(cache, this.name);
-		
-		this.once('cache', function() {
-			console.print("Caching... done.");
-
-			this.once('loadJSON', function() {
-				this.copy();
-			});
-			
-			this.checkout();
-		});
 
 		this.cache();
+		this.checkout();
+		this.copy();
 	};
 
 	public any function cache() {
@@ -347,82 +326,77 @@ component name="package" extends="foundry.core.emitter" {
 				// 	return this.emit('cache');
 				// }
 
-				logger.print('Caching... ' & this.gitUrl)
+				print('caching',this.gitUrl);
 				
 				var theUrl = this.gitUrl;
+				
 				if (len(process.env("HTTP_PROXY")) GT 0) {
 					theUrl = rereplace(url,"^git:", 'https:');
 				}
 
-			    try {
-					//execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
-					cp = new foundry.core.childprocess("git",["clone","#theUrl#"],{ cwd: path.dirname(this.path)});
-					cp.exec();
-				} catch(any err) {
-					writeDump(var=err,abort=true);
-					logger.print('Cloning... already exists.');
-					return this.emit('error');
-				}
+				//execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
+				cp = childprocess.spawn("git",["clone","#theUrl#"],{ cwd: path.dirname(this.path)});
+			
 
-				this.emit('cache');
+				//this.emit('cache');
 			});
 		});
 	};
 
 	public any function checkout() {
-		logger.print('Fetching... ' & this.name);
+		print('fetching',this.name);
+		cp = childprocess.spawn("git",["checkout"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+		// this.version_check();
 
-		this.once('versions', function (versions) {
-			if (arrayLen(versions) EQ 0) {
-				this.emit('checkout');
-				this.loadJSON();
-			}
+		// if (arrayLen(this.versions) EQ 0) {
+		// 	this.loadJSON();
+		// 	return;
+		// }
 
-			// If tag is specified, try to satisfy it
-			if (this.tag) {
-				versions = versions.filter(function (version) {
-					return semver.satisfies(version, this.tag);
-				});
+		// // If tag is specified, try to satisfy it
+		// if (this.tag) {
+		// 	this.versions = _.filter(this.versions,function (version) {
+		// 		return semver.satisfies(version, this.tag);
+		// 	});
 
-				if (arrayLen(versions) EQ 0) {
-					return this.emit('error', logger.error('Can not find tag: ' & this.name & '##' & this.tag));
-				}
-			}
+		// 	if (arrayLen(versions) EQ 0) {
+		// 		return print('error','Can not find tag: ' & this.name & '##' & this.tag);
+		// 	}
+		// }
 
-			// Use latest version
-			this.tag = versions[0];
+		// // Use latest version
+		// this.tag = this.versions[1];
 
-			if (this.tag) {
-				logger.print("Checkout... #this.name# ## #this.tag#");
+		// if (this.tag) {
+		// 	print("checking out","#this.name# ## #this.tag#");
 
-				try {
-					cp = new foundry.core.childprocess("git",["checkout","-b","#this.tag#","#this.tag#"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
-					cp.exec();
-					
-				} catch(any err) {
-					console.print(err.message);
-					
-					if (err.code EQ 128) {
-						this.emit('checkout');
-						this.loadJSON();
-					}
+		// 	try {
+		// 		
+				
+				
+		// 	} catch(any err) {
+		// 		console.print(err.message);
+				
+				
+		// 		// if (err.code EQ 128) {
+		// 		//	this.loadJSON();
+		// 		// }
 
-					if (code NEQ 0) return this.emit('error', logger.error('Git status: ' & code));
-					
-					//no errors, just loadJson()
-					this.emit('checkout');
-					this.loadJSON();
-					//var checkout = execute('git', [ 'checkout', this.tag], { cwd: this.path })
-				}
-			}
-		});
+		// 		if (code NEQ 0) return print('error',err.message);
+				
+		// 		//no errors, just loadJson()
+		// 		this.loadJSON();
+		// 		//var checkout = execute('git', [ 'checkout', this.tag], { cwd: this.path })
+		// 		cp = childprocess.spawn("git",["checkout","-b","#this.tag#","#this.tag#"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+				
+		// 	}
+		// }
 
-		this.versions();
 	};
 
 	public any function describeTag() {
-		cp = new foundry.core.childprocess("git",["describe","--always","--tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
-			cp.exec();
+		cp = childprocess.spawn("git",["describe","--always","--tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+		
 
 		var tag = '';
 
@@ -438,43 +412,36 @@ component name="package" extends="foundry.core.emitter" {
 		});
 	};
 
-	public any function versions() {
-		console.print("Version check...");
-		
-		this.on('fetch', function () {
+	public any function version_check() {
+		print("version check",this.name);
 
-			cp = new foundry.core.childprocess("git",["tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
-			cp.exec();
-
-			var versions = '';
-
-			// cp.stdout.setEncoding('utf8');
-			// cp.stdout.on('data',  function (data) {
-			// 	versions &= data;
-			// });
-
-			versions = versions.split("\n");
-			versions = _.filter(versions,function (ver) {
-				//console.print("version filter: " & serialize(ver));
-				return semver.valid(ver);
-
-
-				versions = versions.sort(function (a, b) {
-					return semver.gt(a, b) ? -1 : 1;
-				});
-				this.emit('versions', this.versions);
-			});
-		});
-	 	
 	 	//go fetch! ruff ruff!
 	 	this.fetch();
+		cp = childprocess.spawn("git",["tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+		
+
+		var versions = "";
+
+		versions &= cp.stdout;
+
+		versions = versions.split("\n");
+		versions = _.filter(versions,function (ver) {
+			//console.print("version filter: " & serialize(ver));
+			return semver.valid(ver);
+
+
+			versions = versions.sort(function (a, b) {
+				return semver.gt(a, b) ? -1 : 1;
+			});
+		});
+
+		this.versions = versions;
 	};
 
 	public any function fetch() {
-		console.print("Fetch... #path.resolve(cache, this.name)#")
-		//// 
-		cp = new foundry.core.childprocess("git",["fetch"],{ 'cwd': path.resolve(cache,this.name) });
-		cp.exec();
+		print("fetch",path.resolve(cache, this.name));
+		cp = childprocess.spawn("git",["fetch"],{ 'cwd': path.resolve(cache,this.name) });
+		
 		//cp.close();
 		// /writeDump(var=Runtime.exec(),abort=true);
 	 	// try {
@@ -488,14 +455,32 @@ component name="package" extends="foundry.core.emitter" {
 	  // cp.on('close', function (code) {
 	  //   if (code != 0) return this.emit('error', logger.error('Git status: ' + code));  
 	  // });
-		this.emit('fetch');
 	};
 
 	public any function fetchURL() {
 	  if (this.json.repository && this.json.repository.type == 'git') {
-	    this.emit('fetchURL',  this.json.repository.url);
+	    //this.emit('fetchURL',  this.json.repository.url);
 	  } else {
-	    this.emit('error', logger.error('No git url found for ' + this.json.name));
+	    print('error','No git url found for ' & this.json.name);
 	  }
 	};
+
+	public any function print(action = "",detail = "") {
+		switch (outputMode) {
+			case "html":
+				writeOutput('<div class="fpm-output-line"><strong>fpm</strong> <span style="color:navy;">#action#</span> #detail#</div>');
+				flush();
+				break;
+			case "console":
+				if(action EQ "error") {
+					console.print("@|bold,black fpm|@ @|bold,red error|@ @|black #detail#|@");
+				} else {
+					console.print("@|bold,black fpm|@ @|bold,cyan #action#|@ @|black #detail#|@");
+				}
+				break;
+
+			default:
+				writeOutput("fpm #action# #detail#");
+		}
+	}
 }

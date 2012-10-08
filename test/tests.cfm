@@ -1,5 +1,5 @@
 <cfscript>
-fpm = new lib.index();
-
-writeDump(var=fpm.install('/foundry_modules/'),abort=true);
+console = new foundry.core.console();
+console.info("testing");
+abort;
 </cfscript>
