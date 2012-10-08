@@ -106,8 +106,6 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 	};
 
 	public void function Should_copy_files_from_temp_folder_to_local_path() {
-		
-
 		var pkg = new lib.core.package('fpm-test-module', 'git://github.com/joshuairl/fpm-test-module.git');
 		//pkg.resolve();
 

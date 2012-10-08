@@ -11,26 +11,29 @@
 //  - error: fired on all errors
 //  - data: fired when trying to output data
 // ==========================================
-component name="package" {
-	variables.urlUtil = new foundry.core.url();
-
-	//NEEDED:
-	variables._        = new foundry.core.util();
-	//variables.git = require("../util/git");
-	variables.mkdirp   = new foundry_modules.mkdirp.mkdirp();
-	//variables.rimraf   = require('rimraf'); //not done yet
-	variables.async    = new foundry_modules.async.async();
-	variables.process    = new foundry.core.process();
-	variables.semver = new foundry_modules.semver.semver();
-	variables.path     = new foundry.core.path();
-	variables.tmp      = new foundry_modules.tmp.index(); //not done yet
-	variables.fs       = new foundry.core.fs();
-	variables.console = new foundry.core.console();
-	variables.childprocess = new foundry.core.childProcess();
+component name="package" extends="foundry.core.emitter" {
 	
+
 	public any function init(name, endpoint, manager, output = "console")  {
+		
+		//NEEDED:
+		variables._ 		= require("util");
+		//variables.git 	= require("../util/git");
+		variables.mkdirp	= require("mkdirp");
+		//variables.rimraf	= require('rimraf'); //not done yet
+		//variables.async		= require("async");
+		variables.process	= require("process");
+		variables.semver	= require("semver");
+		variables.path		= require("path");
+		variables.tmp 		= require("tmp");
+		variables.fs		= require("fs");
+		variables.console 	= require("console");
+		variables.childprocess = require("childprocess");
+		variables.urlUtil = require("url");
+
 		variables.config   = new lib.core.config();
 		variables.source   = new lib.core.source();
+
 		variables.outputMode = arguments.output;
 		var temp = GetTempDirectory();
 		
@@ -111,7 +114,9 @@ component name="package" {
 			} else {
 				//logger.print('endpoint: other');
 				//writeDump(var=endpoint,abort=true);
-				this.tag = listToArray(endpoint,'##')[2];
+				if(listLen(endpoint,'##') GT 1) {
+					this.tag = listToArray(endpoint,'##')[2];
+				}
 			}
 
 
