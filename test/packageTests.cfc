@@ -3,11 +3,11 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 		_ = new foundry.core.util();
 		console = new foundry.core.console();
 		fs = new foundry.core.fs();
-		console.log("===== start ======")
+		console.log("===== start ======");
 	}
 
 	public void function tearDown() {
-		console.log("====== end =======")
+		console.log("====== end =======");
 	}
 
 	public void function Should_resolve_git_URLs_properly() {

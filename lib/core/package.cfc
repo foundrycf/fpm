@@ -14,8 +14,7 @@
 component name="package" extends="foundry.core.emitter" {
 	
 
-	public any function init(name, endpoint, manager, output = "console")  {
-		
+	public any function init(name, endpoint, manager, output = "html")  {
 		//NEEDED:
 		variables._ 		= require("util");
 		//variables.git 	= require("../util/git");
@@ -30,8 +29,7 @@ component name="package" extends="foundry.core.emitter" {
 		variables.console 	= require("console");
 		variables.childprocess = require("childprocess");
 		variables.urlUtil = require("url");
-		
-
+		//variables.flush = require("../../deps/scriptcfc/flush");
 		variables.config   = new lib.core.config();
 		variables.source   = new lib.core.source();
 
@@ -41,7 +39,7 @@ component name="package" extends="foundry.core.emitter" {
 		var home = "";
 
 		if(server.os.name CONTAINS "windows") {
-			home = process.env('USERPROFILE')
+			home = process.env('USERPROFILE');
 			appdata = process.env('APPDATA');
 			cache = path.resolve((len(appdata) GT 0 ? appdata : temp), "foundry-cache");
 		} else {
@@ -52,7 +50,9 @@ component name="package" extends="foundry.core.emitter" {
 		this.dependencies = {};
 		this.json         = {};
 		this.name         = arguments.name;
+		if(structKeyExists(arguments,'manager')) {
 		this.manager      = arguments.manager;
+		}
 
 		this.expressions = {
 			"gitPlain":new foundry.core.regexp("^(.*\.git)$"),
@@ -61,7 +61,7 @@ component name="package" extends="foundry.core.emitter" {
 			"jscss":new foundry.core.regexp("^[\.\/~]\.?[^.]*\.(js|css)"),
 			"dir":new foundry.core.regexp("^[\.\/~]"),
 			"https":new foundry.core.regexp("^https?:\/\/")
-		}
+		};
 
 		this.localpath = path.join(expandPath('/'), 'foundry_modules', this.name);
 
@@ -69,7 +69,7 @@ component name="package" extends="foundry.core.emitter" {
 			if (this.expressions.gitPlain.test(endpoint)) {
 				//logger.print('endpoint: gitPlain');
 				matches = this.expressions.gitPlain.match(endpoint);
-				//logger.print('matches: ' & serialize(matches));
+				//logger.print('matches: ' & serializeJson(matches));
 				this.gitUrl = rereplace(matches[1],"^git\+",'');
 				this.tag    = false;
 
@@ -203,21 +203,21 @@ component name="package" extends="foundry.core.emitter" {
 	public any function loadJSON() {
 		console.info("[START] LOAD JSON");
 		//read json
-		print("reading",path.join(this.path, 'foundry.json'));
+		//print("reading",path.join(this.path, 'foundry.json'));
 		var configFile = path.join(this.path, 'foundry.json');
-		console.info("configPath -> #configFile#");
+		//print("configPath -> #configFile#");
 		var configContent = deserializeJson(fileRead(configFile));
-		console.info("configContent -> #serialize(configFile)#");
+		//print("configContent -> #serializeJson(configFile)#");
 
 		var config = new foundry.core.config(configContent);
 		var m = Path.resolve(Path.dirname(configFile), structKeyExists(config,'main')? config.main : '');
 
-		console.info("main path -> #m#");
+		//print("main path -> #m#");
 	    this.json    = configContent;
 	    this.name    = this.json.name;
 	    this.version = this.json.version;
 
-		console.info("[END] LOAD JSON");
+		//print("[END] LOAD JSON");
 	};
 
 	public any function download() {
@@ -279,21 +279,21 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function getDeepDependencies(result) {
-	  var result = !isNull(result)? result : [];
+	  var res = !isNull(result)? result : [];
 	  for (var name in this.dependencies) {
-	    result.add(this.dependencies[name])
-	    this.dependencies[name].getDeepDependencies(result);
+	    res.add(this.dependencies[name]);
+	    this.dependencies[name].getDeepDependencies(res);
 	  }
-	  return result;
+	  return res;
 	};
 
 	public any function addDependencies() {
-	  console.info("[START] DEPENDENCIES");
+	  //console.info("[START] DEPENDENCIES");
 	  var dependencies = structKeyExists(this.json,'dependencies')? this.json.dependencies : {};
 
 	  for(dep in dependencies) {
 	  	var ep = dependencies[dep];
-	  	console.info("dep: " & dep);
+	  	//console.info("dep: " & dep);
   		this.dependencies[dep] = new lib.core.Package(dep, ep);
 
   		this.dependencies[dep].resolve();
@@ -307,7 +307,7 @@ component name="package" extends="foundry.core.emitter" {
 
 	  //async.parallel(callbacks, this.emit.bind(this, 'resolve'));
 
-	  console.info("[END] DEPENDENCIES");
+	  //console.info("[END] DEPENDENCIES");
 	};
 
 	public any function exists(callback) {
@@ -316,7 +316,6 @@ component name="package" extends="foundry.core.emitter" {
 
 	public any function clone() {
 		this.path = path.resolve(cache, this.name);
-
 		this.cache();
 		this.checkout();
 		this.copy();
@@ -331,9 +330,13 @@ component name="package" extends="foundry.core.emitter" {
 				// 	logger.print('Cached... ' & this.gitUrl);
 				// 	return this.emit('cache');
 				// }
-
+				if(!isDefined("this.giturl")) {
+					//writeDump(var=this,abort=true);
+					print("error","No git url specified for #this.name#");
+					return;
+				}
 				print('caching',this.gitUrl);
-				
+
 				var theUrl = this.gitUrl;
 				
 				if (len(process.env("HTTP_PROXY")) GT 0) {
@@ -408,14 +411,14 @@ component name="package" extends="foundry.core.emitter" {
 
 		cp.stdout.setEncoding('utf8');
 		cp.stdout.on('data',  function (data) {
-		tag += data;
+			tag += data;
 		});
 
-		cp.on('close', function (code) {
-			if (code == 128) tag = 'unspecified'.grey; // not a git repo
-			else if (code != 0) return this.emit('error', logger.error('Git status: ' + code));
-			this.emit('describeTag', tag.replace("\n$", ''));
-		});
+		// cp.on('close', function(code) {
+		// 	if (code == 128) tag = 'unspecified'.grey; // not a git repo
+		// 	else if (code != 0) return this.emit('error', logger.error('Git status: ' + code));
+		// 	this.emit('describeTag', tag.replace("\n$", ''));
+		// });
 	};
 
 	public any function version_check() {
@@ -432,7 +435,7 @@ component name="package" extends="foundry.core.emitter" {
 
 		versions = versions.split("\n");
 		versions = _.filter(versions,function (ver) {
-			//console.print("version filter: " & serialize(ver));
+			//console.print("version filter: " & serializeJson(ver));
 			return semver.valid(ver);
 
 
@@ -474,8 +477,12 @@ component name="package" extends="foundry.core.emitter" {
 	public any function print(action = "",detail = "") {
 		switch (outputMode) {
 			case "html":
-				writeOutput('<div class="fpm-output-line"><strong>fpm</strong> <span style="color:navy;">#action#</span> #detail#</div>');
-				flush();
+				if(action EQ "error") {
+					writeOutput('<div class="fpm-output-line"><strong>fpm</strong> <span style="color:red;">#action#</span> #detail#</div>');
+				} else {
+					writeOutput('<div class="fpm-output-line"><strong>fpm</strong> <span style="color:navy;">#action#</span> #detail#</div>');
+				}
+				//flush.flush();
 				break;
 			case "console":
 				if(action EQ "error") {
