@@ -2,7 +2,7 @@ component name="testPackage" extends="mxunit.framework.testcase" {
 	public void function setUp() {
 		_ = new foundry.core.util();
 		console = new foundry.core.console();
-		fs = new foundry.core.fs();
+		//fs = new foundry.core.fs();
 		console.log("===== start ======");
 	}
 

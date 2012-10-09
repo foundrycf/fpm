@@ -55,12 +55,12 @@ component name="package" extends="foundry.core.emitter" {
 		}
 
 		this.expressions = {
-			"gitPlain":new foundry.core.regexp("^(.*\.git)$"),
-			"gitSemver":new foundry.core.regexp("^(.*\.git)##(.*)$"),
-			"gitAdvanced":new foundry.core.regexp("^(?:(git):|git\+(https?):)\/\/([^\\]+)##?(.*)$"),
-			"jscss":new foundry.core.regexp("^[\.\/~]\.?[^.]*\.(js|css)"),
-			"dir":new foundry.core.regexp("^[\.\/~]"),
-			"https":new foundry.core.regexp("^https?:\/\/")
+			"gitPlain":require("regexp","^(.*\.git)$"),
+			"gitSemver":require("regexp","^(.*\.git)##(.*)$"),
+			"gitAdvanced":require("regexp","^(?:(git):|git\+(https?):)\/\/([^\\]+)##?(.*)$"),
+			"jscss":require("regexp","^[\.\/~]\.?[^.]*\.(js|css)"),
+			"dir":require("regexp","^[\.\/~]"),
+			"https":require("regexp","^https?:\/\/")
 		};
 
 		this.localpath = path.join(expandPath('/'), 'foundry_modules', this.name);
@@ -201,19 +201,28 @@ component name="package" extends="foundry.core.emitter" {
 
 	// Private
 	public any function loadJSON() {
-		console.info("[START] LOAD JSON");
+		
 		//read json
 		//print("reading",path.join(this.path, 'foundry.json'));
 		var configFile = path.join(this.path, 'foundry.json');
+		var configFileRead = "";
+		var configData = {};
 		//print("configPath -> #configFile#");
-		var configContent = deserializeJson(fileRead(configFile));
+		if(fileExists(configFile)) {
+			configFileRead = fileRead(configFile);
+			configData = deserializeJson(configFileRead);
+		} else {
+			print('error','No foundry.json found. Failed to get info.');
+			return;
+		}
+
 		//print("configContent -> #serializeJson(configFile)#");
 
-		var config = new foundry.core.config(configContent);
+		var config = new foundry.core.config(configData);
 		var m = Path.resolve(Path.dirname(configFile), structKeyExists(config,'main')? config.main : '');
 
 		//print("main path -> #m#");
-	    this.json    = configContent;
+	    this.json    = configData;
 	    this.name    = this.json.name;
 	    this.version = this.json.version;
 
@@ -261,7 +270,6 @@ component name="package" extends="foundry.core.emitter" {
 		print('copying',this.path);
 
 		tmp.dir(function (err, tmpPath) {
-			console.info("Temp Path: " & tmpPath);
 			// if (this.assetType) {
 			//        return fs.readFile(this.path, function (err, data) {
 			//          fs.writeFile(path.join((this.path = tmpPath), 'index' + this.assetType), data, function () {
@@ -288,12 +296,10 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function addDependencies() {
-	  //console.info("[START] DEPENDENCIES");
 	  var dependencies = structKeyExists(this.json,'dependencies')? this.json.dependencies : {};
 
 	  for(dep in dependencies) {
 	  	var ep = dependencies[dep];
-	  	//console.info("dep: " & dep);
   		this.dependencies[dep] = new lib.core.Package(dep, ep);
 
   		this.dependencies[dep].resolve();
@@ -306,8 +312,6 @@ component name="package" extends="foundry.core.emitter" {
 	  // }
 
 	  //async.parallel(callbacks, this.emit.bind(this, 'resolve'));
-
-	  //console.info("[END] DEPENDENCIES");
 	};
 
 	public any function exists(callback) {
@@ -355,7 +359,7 @@ component name="package" extends="foundry.core.emitter" {
 	public any function checkout() {
 		print('fetching',this.name);
 		cp = childprocess.spawn("git",["checkout"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
-		// this.version_check();
+		//this.version_check();
 
 		// if (arrayLen(this.versions) EQ 0) {
 		// 	this.loadJSON();
@@ -435,12 +439,9 @@ component name="package" extends="foundry.core.emitter" {
 
 		versions = versions.split("\n");
 		versions = _.filter(versions,function (ver) {
-			//console.print("version filter: " & serializeJson(ver));
-			return semver.valid(ver);
-
-
-			versions = versions.sort(function (a, b) {
-				return semver.gt(a, b) ? -1 : 1;
+			return _.isString(semver.valid(ver));
+			versions = _.sort(versions,function (a, b) {
+				return semver._gt(a, b) ? -1 : 1;
 			});
 		});
 
