@@ -1,1 +1,2 @@
 #!/usr/bin/env railo
+java -jar railo-cli.jar -config=./WEB-INF/railo/railo-web.xml.cfm -webroot=/Users/rountrjf/Sites/fpm/ -uri=./test/tests.cfm
