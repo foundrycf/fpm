@@ -1,7 +1,6 @@
 <cfscript>
-src = new lib.core.source(outputMode="console");
-src.info('test-justin',function(err,result) {
-	writeDump(var=arguments,abort=true);
-});
+pkg = new lib.core.package('fpm-test-module','git://github.com/joshuairl/fpm-test-module.git');
+
+pkg.clone();
 //src.register('fpm-test-module','git://github.com/joshuairl/fpm-test-module.git');
 </cfscript>

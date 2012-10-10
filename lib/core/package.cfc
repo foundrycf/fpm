@@ -11,25 +11,27 @@
 //  - error: fired on all errors
 //  - data: fired when trying to output data
 // ==========================================
-component name="package" extends="foundry.core.emitter" {
-	
-
+component name="package" extends="foundry.lib.module" {
 	public any function init(name, endpoint, manager, output = "html")  {
 		//NEEDED:
 		variables._ 		= require("util");
-		//variables.git 	= require("../util/git");
+		mixin("emitter");
+		this.emitter_init();
 		variables.mkdirp	= require("mkdirp");
 		//variables.rimraf	= require('rimraf'); //not done yet
 		//variables.async		= require("async");
 		variables.process	= require("process");
 		variables.semver	= require("semver");
 		variables.path		= require("path");
+		variables.system = CreateObject("java","java.lang.System");
 		variables.tmp 		= require("tmp");
 		variables.fs		= require("fs");
 		variables.console 	= require("console");
 		variables.childprocess = require("childprocess");
 		variables.urlUtil = require("url");
 		//variables.flush = require("../../deps/scriptcfc/flush");
+		variables.git = new lib.util.git();
+		//writeDump(var=git,abort=true);
 		variables.config   = new lib.core.config();
 		variables.source   = new lib.core.source();
 
@@ -146,9 +148,9 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function lookup() {
-	  source.lookup(this.name, function (err, url) {
-	    if (err) return print("error", err.message);
-	    this.gitUrl = url;
+	  source.lookup(this.name, function (err, theUrl) {
+	    if (structCount(err) GT 0) writeDump(var=err,abort=true); //return print("error", serializeJson(err));
+	    this.gitUrl = theUrl;
 	    //this.emit('lookup');
 	  });
 	};
@@ -218,7 +220,7 @@ component name="package" extends="foundry.core.emitter" {
 
 		//print("configContent -> #serializeJson(configFile)#");
 
-		var config = new foundry.core.config(configData);
+		var config = new foundry.lib.config(configData);
 		var m = Path.resolve(Path.dirname(configFile), structKeyExists(config,'main')? config.main : '');
 
 		//print("main path -> #m#");
@@ -280,6 +282,8 @@ component name="package" extends="foundry.core.emitter" {
 			fs.copyDir(this.path,tmpPath);
 		
 			this.loadJSON();
+
+			structDelete(this,'git');
 			this.addDependencies();
 			//   fs.stat(this.path, function (err, stats) {
 			//     if (structKeyExists(arguments,'err') AND !_.isEmpty(err)) return this.emit('error', err);
@@ -348,7 +352,7 @@ component name="package" extends="foundry.core.emitter" {
 				}
 
 				//execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
-				cp = childprocess.spawn("git",["clone","#theUrl#"],{ cwd: path.dirname(this.path)});
+				cp = git.clone(theUrl,this.path);
 			
 
 				//this.emit('cache');
@@ -358,30 +362,36 @@ component name="package" extends="foundry.core.emitter" {
 
 	public any function checkout() {
 		print('fetching',this.name);
-		cp = childprocess.spawn("git",["checkout"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+		//cp = childprocess.spawn("git",["checkout"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+		this.version_check();
+
+		if (arrayLen(this.versions) EQ 0) {
+			this.loadJSON();
+			return;
+		}
+
+		// If tag is specified, try to satisfy it
+		if (this.tag) {
+			this.versions = _.filter(this.versions,function (version) {
+				return semver.satisfies(version, this.tag);
+			});
+
+			if (arrayLen(versions) EQ 0) {
+				return print('error','Can not find tag: ' & this.name & '##' & this.tag);
+			}
+		}
+
+		// Use latest version
+		this.tag = this.versions[1];
+
+		if (this.tag) {
+			print("checking out","#this.name# ## #this.tag#");
+			cp = git.checkout();
+		}
+
 		//this.version_check();
 
-		// if (arrayLen(this.versions) EQ 0) {
-		// 	this.loadJSON();
-		// 	return;
-		// }
-
-		// // If tag is specified, try to satisfy it
-		// if (this.tag) {
-		// 	this.versions = _.filter(this.versions,function (version) {
-		// 		return semver.satisfies(version, this.tag);
-		// 	});
-
-		// 	if (arrayLen(versions) EQ 0) {
-		// 		return print('error','Can not find tag: ' & this.name & '##' & this.tag);
-		// 	}
-		// }
-
-		// // Use latest version
-		// this.tag = this.versions[1];
-
-		// if (this.tag) {
-		// 	print("checking out","#this.name# ## #this.tag#");
+		
 
 		// 	try {
 		// 		
@@ -408,14 +418,15 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function describeTag() {
-		cp = childprocess.spawn("git",["describe","--always","--tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
+		cp = git.describeTag();
+			//"git",["describe","--always","--tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
 		
 
 		var tag = '';
 
 		cp.stdout.setEncoding('utf8');
 		cp.stdout.on('data',  function (data) {
-			tag += data;
+			tag &= data;
 		});
 
 		// cp.on('close', function(code) {
@@ -427,19 +438,17 @@ component name="package" extends="foundry.core.emitter" {
 
 	public any function version_check() {
 		print("version check",this.name);
-
+		var versions = [];
+	 	
 	 	//go fetch! ruff ruff!
 	 	this.fetch();
-		cp = childprocess.spawn("git",["tag"],{ 'cwd': JavaCast("string",path.resolve(cache,this.name)) });
-		
 
-		var versions = "";
-
-		versions &= cp.stdout;
-
-		versions = versions.split("\n");
+	 	//grab existing tags array
+	 	versions = git.tagList();
+	 	//filter the tags
 		versions = _.filter(versions,function (ver) {
-			return _.isString(semver.valid(ver));
+			var isValid = (!isNull(semver.valid(ver)) AND _.isString(semver.valid(ver)))? true : false;
+			if(!isValid) return false;
 			versions = _.sort(versions,function (a, b) {
 				return semver._gt(a, b) ? -1 : 1;
 			});
@@ -449,9 +458,10 @@ component name="package" extends="foundry.core.emitter" {
 	};
 
 	public any function fetch() {
-		print("fetch",path.resolve(cache, this.name));
-		cp = childprocess.spawn("git",["fetch"],{ 'cwd': path.resolve(cache,this.name) });
-		
+		// print("fetch",path.resolve(cache, this.name));
+		// cp = git.fetch();
+		// //writeDump(var=cp,abort=true);
+		// this.Git.getRepository().close();
 		//cp.close();
 		// /writeDump(var=Runtime.exec(),abort=true);
 	 	// try {
@@ -475,7 +485,7 @@ component name="package" extends="foundry.core.emitter" {
 	  }
 	};
 
-	public any function print(action = "",detail = "") {
+	public any function print(String action = "",String detail = "") {
 		switch (outputMode) {
 			case "html":
 				if(action EQ "error") {
