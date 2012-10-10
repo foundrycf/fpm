@@ -23,12 +23,12 @@ component extends="foundry.core" {
 			errors = err;
 			return callback(errors,'');
 		}
-		
-	    if (res.status_code NEQ 200) return callback(errors,name & ' not found');
+		//writeDump(var=res,abort=true);
+	    if (res.responseheader.status_code NEQ 200) return callback(errors,name & ' not found');
 	    callback(errors,deserializeJson(res.filecontent).url);
 	};
-
-	public any function register(name, url, callback = function() {}) {
+	noop = function() {};
+	public any function register(name, url, callback = noop) {
 		try {
 			var body = {name: name, url: url};
 			var req = new http(method="post",url=endpoint);
