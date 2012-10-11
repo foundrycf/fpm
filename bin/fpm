@@ -1,2 +1,3 @@
-#!/usr/bin/env railo
-java -jar railo-cli.jar -config=./WEB-INF/railo/railo-web.xml.cfm -webroot=/Users/rountrjf/Sites/fpm/ -uri=./test/tests.cfm
+#!/bin/bash
+CURRPATH=$(pwd)
+java -jar ./railo/railo-cli.jar -config=.railo/WEB-INF/railo/railo-web.xml.cfm -webroot=/Users/rountrjf/Sites/fpm/ -uri=./test/tests.cfm?path=$CURRPATH

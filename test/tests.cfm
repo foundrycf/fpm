@@ -1,6 +1,5 @@
 <cfscript>
-pkg = new lib.core.package('fpm-test-module','git://github.com/joshuairl/fpm-test-module.git');
+cli = new fpm();
 
-pkg.clone();
-//src.register('fpm-test-module','git://github.com/joshuairl/fpm-test-module.git');
+cli.install(['systemcommand']);
 </cfscript>

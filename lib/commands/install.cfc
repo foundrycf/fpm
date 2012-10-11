@@ -15,7 +15,7 @@ component name="install" extends="foundry.core" {
     return this;
   }
 
-  public any function install(paths, options) {
+  public any function install(array paths, options) {
     var emitter = require('emitter');
     var async   = require('async');
     //var nopt    = require('nopt');
@@ -26,12 +26,9 @@ component name="install" extends="foundry.core" {
 
     var optionTypes = { help: false };
     var shorthand   = { 'h': ['--help'], 'S': ['--save'] };
-    var manager = require("./core/manager").init();
+    var manager = new lib.core.manager(paths);
     if (structKeyExists(arguments,'options') && structKeyExists(arguments.options,'save')) save(emitter, manager, paths);
 
-    manager.on('data'    , _.bind(emitter.emit,emitter,'data'));
-    manager.on('error'   , _.bind(emitter.emit,emitter,'error'));
-    manager.on('resolve' , _.bind(emitter.emit,emitter,'end'));
     manager.resolve();
 
     return emitter;

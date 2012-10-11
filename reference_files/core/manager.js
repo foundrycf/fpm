@@ -30,7 +30,7 @@ var fs      = require('fs');
 var Manager = function (endpoints) {
   this.dependencies = {};
   this.cwd          = process.cwd();
-  this.endpoints    = endpoints || [];
+  this.endpoints    = structKeyExists(arguments,'endpoints')? arguments.endpoints : [];
 };
 
 Manager.prototype = Object.create(events.EventEmitter.prototype);

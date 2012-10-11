@@ -64,7 +64,6 @@ component name="package" extends="foundry.lib.module" {
 			"dir":require("regexp","^[\.\/~]"),
 			"https":require("regexp","^https?:\/\/")
 		};
-
 		this.localpath = path.join(expandPath('/'), 'foundry_modules', this.name);
 
 		if (structKeyExists(arguments,'endpoint')) {
@@ -284,7 +283,7 @@ component name="package" extends="foundry.lib.module" {
 			this.loadJSON();
 
 			structDelete(this,'git');
-			this.addDependencies();
+			//this.addDependencies();
 			//   fs.stat(this.path, function (err, stats) {
 			//     if (structKeyExists(arguments,'err') AND !_.isEmpty(err)) return this.emit('error', err);
 		});

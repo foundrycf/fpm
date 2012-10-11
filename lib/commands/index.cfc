@@ -1,14 +1,19 @@
+/**
+* @hint "I should only "
+* 
+* 
+**/
 component name="index" extends="foundry.core" {
 	public any function init() {
-		var help = require("./commands/help").init();
-		var install = require("./commands/install").init();
-		var list = require("./commands/list").init();
-		var uninstall = require("./commands/uninstall").init();
-		var update = require("./commands/update").init();
-		var lookup = require("./commands/lookup").init();
-		var info = require("./commands/info").init();
-		var register = require("./commands/register").init();
-		var search = require("./commands/search").init();
+		var help = new help();
+		var install = new install();
+		var list = new list();
+		var uninstall = new uninstall();
+		var update = new update();
+		var lookup = new lookup();
+		var info = new info();
+		var register = new register();
+		var search = new search();
 
 		this['help'] = help.help;
 		this['install'] = install.install;

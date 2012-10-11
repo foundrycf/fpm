@@ -12,45 +12,45 @@
 // - data: fired when trying to output data
 // - end: fired when finished installing
 // ==========================================
-component name="Manager" extends="foundry.core.emitter" {
-	variables.Package = require('./package');
-	variables.config = require("./config");
-	variables.prune = require('../util/prune');
-	variables.emitter = require('emitter');
-	variables.async = require('async');
-	variables.console = require('console');
-	variables.path = require('path');
-	variables.fs = require('fs');
-	variables._ = require("UnderscoreCF").init();
+component name="manager" extends="foundry.lib.module" {
+	public any function init(array endpoints) {
+		variables.config = require("./config");
+		variables.prune = require('../util/prune');
+		mixin("emitter");
+		this.emitter_init();
+		variables.async = require('async');
+		variables.console = require('console');
+		variables.path = require('path');
+		variables.fs = require('fs');
+		variables._ = require("util");
 
-	public any function init(endpoints) {
 		this.dependencies = {};
 		this.cwd = path.dirname(GetBaseTemplatePath());
-		this.endpoints = structKeyExists(arguments,'endpoints')? require("arrayObj").init(arguments.endpoints) : require("arrayObj").init();
+		this.endpoints = structKeyExists(arguments,'endpoints')? arguments.endpoints : [];
 
 		return this;
 	}
 
 
 	public any function resolve() {
-	  var resolved = function() {
-	    this.prune();
-	    
-	    this.on('install', this.emit('resolve'));
-	    
-	    this.install();
-	  };
+		var resolved = function() {
+			//this.prune();
+			this.install();
 
-	  this.once('resolveLocal', function () {
-	    if (this.endpoints.length()) {
-	      this.once('resolveEndpoints', resolved).resolveEndpoints();
-	    } else {
-	      this.once('resolveFromJson', resolved).resolveFromJson();
-	    }
-	  });
+			this.emit('resolve');
+		};
 
-	  this.resolveLocal();
-	  return this;
+		this.resolveLocal();
+
+		if (arrayLen(this.endpoints)) {
+			this.resolveEndpoints();
+			resolved();
+		} else {
+			this.resolveFromJson();
+			resolved();
+		}
+
+		return this;
 	};
 
 	public any function resolveLocal() {
@@ -69,27 +69,20 @@ component name="Manager" extends="foundry.core.emitter" {
 	};
 
 	public any function resolveEndpoints() {
-	   // Iterate through paths
-	  // Add to depedencies array
-	  // Prune & install
+		// Iterate through paths
+		// Add to depedencies array
+		// Prune & install
+		var endpoints = this.endpoints;
 
-		  async.forEach(
-		  		//array
-		  		this.endpoints,
+		for(ep in endpoints) {
+			var name = rereplacenocase(path.basename(ep),"(\.git)?(##.*)?$",'');
+			var pkg  = new Package(name, ep, this);
+				this.dependencies[name] = structKeyExists(this.dependencies,name)? this.dependencies[name] : [];
+				this.dependencies[name].add(pkg);
+				pkg.resolve();
+		}
 
-		  		//iterator
-				_.bind(function(endpoint, next) {
-					var name = rereplacenocase(path.basename(endpoint),"(\.git)?(##.*)?$",'');
-					var pkg  = new Package(name, endpoint, this);
-					this.dependencies[name] = this.dependencies[name] || [];
-					this.dependencies[name].add(pkg);
-					pkg.on('resolve', next).resolve();
-				}
-				,this), 
-
-				//callback
-				_.bind(this.emit,this, 'resolveEndpoints')
-			);
+		this.emit('resolveEndpoints');
 	};
 
 	public any function loadJSON() {
@@ -138,36 +131,37 @@ component name="Manager" extends="foundry.core.emitter" {
 	public any function getDeepDependencies() {
 	  var result = {};
 
-	  for (var name in this.dependencies) {
-	    this.dependencies[name].forEach(function (pkg) {
-	      result[pkg.name] = result[pkg.name] || [];
+	  for (name in structKeyArray(this.dependencies)) {
+	    _.forEach(this.dependencies[name],function (pkg) {
+	      result[pkg.name] = structKeyExists(result,pkg.name)? result[pkg.name] : [];
 	      result[pkg.name].add(pkg);
-	      pkg.getDeepDependencies().forEach(function (pkg) {
+	      _.forEach(pkg.getDeepDependencies(),function (pkg) {
 	        result[pkg.name] = result[pkg.name] || [];
 	        result[pkg.name].add(pkg);
 	      });
 	    });
-	  }
-
+	  };
 	  return result;
 	};
 
 	public any function prune() {
-	  try {
-	    this.dependencies = prune(this.getDeepDependencies());
-	  } catch (err) {
-	    this.emit('error', err);
-	  }
-	  return this;
+		try {
+			this.dependencies = this.prune(this.getDeepDependencies());
+		} catch (err) {
+			this.emit('error', err);
+		}
+
+		return this;
 	};
 
 	public any function install() {
-	  async.forEach(Object.keys(this.dependencies), 
-	  	_.bind(function (name, next) {
-	   		this.dependencies[name][0].once('install', next).install();
-	  	},this), 
+		_.forEach(structKeyArray(this.dependencies),function (name) {
+	   		this.dependencies[name][0].install();
+	  	},
+	  	this); 
 
-	  	_.bind(this.emit, this, 'install'));
+		this.emit('install');
+
 	  return this;
 	};
 }

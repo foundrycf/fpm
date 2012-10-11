@@ -1,0 +1,40 @@
+<project name="fpm" default="dist" basedir=".">
+    <description>
+      foundry package manager
+    </description>
+  <!-- set global properties for this build -->
+  <property name="modules" location="foundry_modules"/>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile
+    <mkdir dir="${build}"/> -->
+  </target>
+
+  <target name="deps" description="gets dependencies">
+    <mkdir dir="${modules}"/>
+    
+    <exec executable="git">
+      <arg value="clone" />
+      <arg value="git://github.com/joshuairl/semver.git" />
+      <arg value="./foundry_modules/semver"/>
+    </exec>
+    <exec executable="git">
+      <arg value="clone" />
+      <arg value="git://github.com/slamkajs/mkdirp.git" />
+      <arg value="./foundry_modules/mkdirp"/>
+    </exec>
+    <exec executable="git">
+      <arg value="clone" />
+      <arg value="git://github.com/joshuairl/tmp.git" />
+      <arg value="./foundry_modules/tmp"/>
+    </exec>
+  </target>
+
+  <target name="clean" description="clean up">
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete file=".gitmodules" />
+    <delete dir="${modules}"/>
+  </target>
+</project>
