@@ -21,11 +21,15 @@ try {
 		cli.help();
 		abort;
 	} else {
-		evaluate("cli.#command#('#arrayToList(argv,''',''')#')");
+		if(arrayLen(argv) GT 0){
+			evaluate("cli.#command#('#arrayToList(argv,''',''')#')");
+		} else {
+			evaluate("cli.#command#()");
+		}
 		abort;
 	}
 } catch(any err) {
-	writeOutput("fpm error \n" & serialize(err.additional));
+	writeOutput("fpm error " & serialize(err));
 	abort;
 }
 </cfscript>

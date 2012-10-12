@@ -16,6 +16,7 @@ component extends="foundry.core" {
 
 	public any function lookup(name,callback) {
 		var errors = {};
+		print('looking for',name);
 		try {
 			var req = new http(method="get",url=endpoint & '/' & encodeURIComponent(name));
 			var res = req.send().getPrefix();
@@ -23,40 +24,47 @@ component extends="foundry.core" {
 			errors = err;
 			return callback(errors,'');
 		}
-		//writeDump(var=res,abort=true);
-	    if (res.responseheader.status_code NEQ 200) return callback(errors,name & ' not found');
+
+	    if (res.responseheader.status_code NEQ 200) {
+			print('error',name & ' not found');
+			return callback(errors,name & ' not found');
+	    }
 	    callback(errors,deserializeJson(res.filecontent).url);
 	};
+
 	noop = function() {};
-	public any function register(name, url, callback = noop) {
+
+	public any function register(name, theUrl, callback = noop) {
+		
+		print('registering',name);
+		
 		try {
-			var body = {name: name, url: url};
 			var req = new http(method="post",url=endpoint);
 			req.addParam(type="formfield",name="name",value="#arguments.name#"); 
-			req.addParam(type="formfield",name="url",value="#arguments.url#"); 
+			req.addParam(type="formfield",name="url",value="#arguments.theUrl#"); 
 			var res = req.send().getPrefix();
 		} catch (any err) {
 			if(!isNull(err)) {
-				print('error',err.Detail);
-			 	return callback(err.Detail);
+				print('error',err.message);
+			 	return callback(err.additional);
 			}
 		}
-		if (res.status_code EQ 406) {
-			print('error','Duplicate package');
-			return callback('Duplicate package');
+		if (res.responseheader.status_code EQ 406) {
+			print('error','Failed to register package: A package already exists with this information.');
+			return callback('Failed to register package: A package already exists with this information.');
 		}
 
-		if (res.status_code EQ 400) {
-			print('error','Incorrect format');
-			return callback('Incorrect format');
+		if (res.responseheader.status_code EQ 400) {
+			print('error','Failed to register package: The package was in an unacceptable format for the registry.');
+			return callback('Failed to register package: The package was in an unacceptable format for the registry.');
 		}
 
-		if (res.status_code NEQ 201) {
-			print('error','Unknown error: ' & res.status_code);
-			return callback('Unknown error: ' & res.status_code);
+		if (res.responseheader.status_code NEQ 201) {
+			print('error','Failed to register package: Unknown response: ' & res.responseheader.status_code);
+			return callback('Failed to register package: Unknown response: ' & res.responseheader.status_code);
 		}
 		
-
+		print('registered',name);
 		callback();
 	};
 
@@ -67,6 +75,7 @@ component extends="foundry.core" {
 			var res = req.send().getPrefix();
 		} catch (any err) {
 			errors = err;
+
 		 	return callback(errors);
 		}
 
@@ -131,27 +140,6 @@ component extends="foundry.core" {
 		return variables.encodedString;
 	}
 
-	public any function print(action = "",detail = "") {
-		switch (outputMode) {
-			case "html":
-				if(action EQ "error") {
-					writeOutput('<div class="fpm-output-line"><strong>fpm</strong> <span style="color:red;">#action#</span> #detail#</div>');
-				} else {
-					writeOutput('<div class="fpm-output-line"><strong>fpm</strong> <span style="color:navy;">#action#</span> #detail#</div>');
-				}
-				//flush.flush();
-				break;
-			case "console":
-				if(action EQ "error") {
-					console.print("@|bold,black fpm|@ @|bold,red error|@ @|black #detail#|@");
-				} else {
-					console.print("@|bold,black fpm|@ @|bold,cyan #action#|@ @|black #detail#|@");
-				}
-				break;
-
-			default:
-				writeOutput("fpm #action# #detail#");
-		}
-	}
+	include "../util/print_func.cfm";
 }
 

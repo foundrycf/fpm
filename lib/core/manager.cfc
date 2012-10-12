@@ -14,15 +14,20 @@
 // ==========================================
 component name="manager" extends="foundry.lib.module" {
 	public any function init(array endpoints) {
+		variables.outputMode = "console";
 		variables.config = require("./config");
 		variables.prune = require('../util/prune');
 		mixin("emitter");
 		this.emitter_init();
-		variables.async = require('async');
+		//variables.async = require('async');
 		variables.console = require('console');
 		variables.path = require('path');
 		variables.fs = require('fs');
 		variables._ = require("util");
+
+		this.json = {
+			'dependencies':{}
+		};
 
 		this.dependencies = {};
 		this.cwd = path.dirname(GetBaseTemplatePath());
@@ -37,7 +42,7 @@ component name="manager" extends="foundry.lib.module" {
 			//this.prune();
 			this.install();
 
-			this.emit('resolve');
+			//this.emit('resolve');
 		};
 
 		this.resolveLocal();
@@ -58,14 +63,14 @@ component name="manager" extends="foundry.lib.module" {
 
 		_.each(dirs,function(dir) {
 			var name = path.basename(dir);
-			console.log(name);
+			//console.log(name);
 
 			this.dependencies[name] = [];
 			this.dependencies[name].add(new Package(name, dir, this));
 
 		});
 
-		this.emit('resolveLocal');
+		//this.emit('resolveLocal');
 	};
 
 	public any function resolveEndpoints() {
@@ -82,25 +87,21 @@ component name="manager" extends="foundry.lib.module" {
 				pkg.resolve();
 		}
 
-		this.emit('resolveEndpoints');
+		//this.emit('resolveEndpoints');
 	};
 
 	public any function loadJSON() {
-	  var json = path.join(this.cwd, config.getjson());
-	  
-	  fs.exists(
-	  	json,
-	  	_.bind(function(exists) {
-		    if (!exists) console.log('Could not find local ' & config.getJson());
-		    _.bind(fs.readFile, json, 'utf8', function (err, json) {
-				      if (structKeyExists(arguments,'err')) return this.emit('error', err);
-				      this.json    = JSON.parse(json);
-				      this.name    = this.json.name;
-				      this.version = this.json.version;
-				      this.emit('loadJSON');
-		    	},this);
-	  	},
-	  	this));
+		var json = path.join(this.cwd, config.getjson());
+
+		if(fileExists(json)) {
+			var jsonFile = fileRead(json,'utf8');
+			//if (structKeyExists(arguments,'err')) return this.emit('error', err);
+			this.json    = JSON.parse(json);
+			this.name    = this.json.name;
+			this.version = this.json.version;
+		} else {
+			print('error','Could not find local foundry.json');
+		}
 	};
 
 	public any function resolveFromJson() {
@@ -108,24 +109,18 @@ component name="manager" extends="foundry.lib.module" {
 	  // Resolve dependencies
 	  // Add to dependencies array
 	  // Prune & install
+		this.loadJSON();
+	 
+	    if (structCount(this.json.dependencies) LTE 0) return print('error','Could not find any dependencies');
 
-	  this.once('loadJSON', _.bind(function () {
-
-	    if (!this.json.dependencies) return this.emit('error', new Error('Could not find any dependencies'));
-
-	    async.forEach(Object.keys(this.json.dependencies), 
-	    	_.bind(function (name, next) {
+	    _.forEach(this.json.dependencies,function (name) {
 		      var endpoint = this.json.dependencies[name];
 		      var pkg      = new Package(name, endpoint, this);
-		      this.dependencies[name] = this.dependencies[name] || [];
+		      this.dependencies[name] = structKeyExists(this.dependencies,name)? this.dependencies[name] : [];
 		      this.dependencies[name].add(pkg);
-		      pkg.on('resolve', next).resolve();
-		    },this), 
+		      pkg.resolve();
 
-		    _.bind(this.emit, this, 'resolveFromJson')
-		   );
-
-	  },this)).loadJSON();
+		  },this);
 	};
 
 	public any function getDeepDependencies() {
@@ -148,7 +143,8 @@ component name="manager" extends="foundry.lib.module" {
 		try {
 			this.dependencies = this.prune(this.getDeepDependencies());
 		} catch (err) {
-			this.emit('error', err);
+			print("error",err.message);
+			//this.emit('error', err);
 		}
 
 		return this;
@@ -156,12 +152,15 @@ component name="manager" extends="foundry.lib.module" {
 
 	public any function install() {
 		_.forEach(structKeyArray(this.dependencies),function (name) {
-	   		this.dependencies[name][0].install();
-	  	},
-	  	this); 
+	   			this.dependencies[name][0].install();
+	  		},
+	  		this
+	  	); 
 
-		this.emit('install');
+		//this.emit('install');
 
 	  return this;
 	};
+
+	include "../util/print_func.cfm";
 }

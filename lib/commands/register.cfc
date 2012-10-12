@@ -14,8 +14,15 @@ component name="register" extends="foundry.core" {
 	public any function init() {
 		return this;
 	}
-	public any function register() {
-		
+
+	public any function register(name,theUrl) {
+		var source = new fpm.lib.core.source(outputMode="console");
+		source.register(name,theUrl,function (err) {
+			if (structKeyExists(arguments,err)) abort;
+
+			abort;
+			//template('register', {name: name, theUrl: theUrl})
+		});
 	}
 	
 	public any function line() {
