@@ -1,19 +1,16 @@
 
+@|bold fpm help install|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} install
-    {{#cyan}}bower{{/cyan}} install {{#grey}}<folder>{{/grey}}
-    {{#cyan}}bower{{/cyan}} install {{#grey}}<pkg>{{/grey}}
-    {{#cyan}}bower{{/cyan}} install {{#grey}}<pkg>#<version>{{/grey}}
+     @|bold,cyan fpm|@ install
+     @|bold,cyan fpm|@ install @|white <folder>|@
+     @|bold,cyan fpm|@ install @|white <pkg>|@
+     @|bold,cyan fpm|@ install @|white <pkg>#<version>|@
 
 Options:
-
-    {{#yellow}}--save{{/yellow}} - adds a dependency entry to a project's {{json}}
+    @|yellow --save|@ - adds a dependency entry to a project's @|cyan foundry.json|@
 
 Can specify one or more:
-
-    {{#cyan}}bower{{/cyan}} install {{#grey}}./foo/package git://example.com#1.0.2{{/grey}}
+     @|bold,cyan fpm|@ install @|white ./my_modules/package git://example.com#1.0.2|@
 
 Description:
-
-    Installs a browser package locally into a {{#grey}}{{directory}}{{/grey}} directory
+    Downloads and installs a package locally into a @|cyan foundry_modules|@ directory

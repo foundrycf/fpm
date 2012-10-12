@@ -14,7 +14,6 @@ component name="index" extends="foundry.core" {
 		var info = new info();
 		var register = new register();
 		var search = new search();
-
 		this['help'] = help.help;
 		this['install'] = install.install;
 		this['list'] = list.list;

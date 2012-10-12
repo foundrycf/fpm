@@ -1,9 +1,8 @@
 
+@|bold fpm help search|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} search
-    {{#cyan}}bower{{/cyan}} search {{#grey}}<name>{{/grey}}
+    @|bold,cyan fpm|@ search
+    @|bold,cyan fpm|@ search @|white <name>|@
 
 Description:
-
     Finds all packages or a specific package.

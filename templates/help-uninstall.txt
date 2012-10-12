@@ -1,16 +1,13 @@
 
+@|bold fpm help uninstall|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} uninstall {{#grey}}<package>{{/grey}}
+    @|bold,cyan fpm|@ uninstall @|white <package>|@
 
 Options:
-
-    {{#yellow}}--save{{/yellow}} - adds a dependency entry to a project's {{json}}
+    @|yellow --save|@ - adds a dependency entry to a project's @|cyan foundry.json|@
 
 Can specify one or more:
-
-    {{#cyan}}bower{{/cyan}} uninstall {{#grey}}jquery jquery-ui{{/grey}}
+    @|bold,cyan fpm|@ uninstall @|white jquery jquery-ui|@
 
 Description:
-
-    Uninstalls a browser package locally from your {{#grey}}{{directory}}{{/grey}} directory
+    Uninstalls a browser package locally from your @|cyan foundry_modules|@ directory

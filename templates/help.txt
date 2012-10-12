@@ -1,16 +1,20 @@
 
+@|bold fpm help|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} <command> {{#grey}}<options>{{/grey}}
+    @|bold,cyan fpm|@ @|white <command> <options>|@
 
 Commands:
-
-    {{commands}}
+    - help [command]
+    - install [package]
+    - list
+    - lookup [package]
+    - register
+    - search [query_text]
+    - uninstall [package]
+    - update [package]
 
 Example:
-
-    {{#grey}}${{/grey}} {{#cyan}}bower{{/cyan}} install {{#grey}}bootstrap spine jquery{{/grey}}
+    $ fpm install UnderscoreCF
 
 General Help:
-
-    {{#grey}}http://git.io/bower{{/grey}}
+    http://git.io/ScCKxQ

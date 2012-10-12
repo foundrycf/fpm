@@ -1,9 +1,8 @@
 
+@|bold fpm help update|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} update
-    {{#cyan}}bower{{/cyan}} update {{#grey}}<package>{{/grey}}
+    @|bold,cyan fpm|@ update
+    @|bold,cyan fpm|@ update @|white <package>|@
 
 Description:
-
     Refreshes a package install

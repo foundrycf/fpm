@@ -12,24 +12,24 @@ component name="help" extends="foundry.core" {
 		return this;
 	}
 
-	public any function help(name) {
+	public any function help(name = "") {
 		var config    = require('./core/config');
-		var console    = require('console').init();
+		var console    = require('console');
 		var fs    = require('fs');
 		var context      = {};
-		var emitter      = new foundry.core.emitter();
-		var commands     = new lib.index();
-		var templateName = structKeyExists(arguments,'name') ? 'help-' & name : 'help';
+		//var commands     = new fpm.lib.commands.index();
+		var templateName = len(trim(arguments.name)) GT 0 ? 'help-' & name : 'help';
+		// writeOutput("in");
+		//if (!structKeyExists(arguments,'name')) context = { commands: arrayToList(structKeyArray(commands),', ') };
+		//_.extend(context, config);
 
-		if (!structKeyExists(arguments,'name')) context = { commands: arrayToList(structKeyArray(commands),', ') };
-		_.extend(context, config);
-
-		fs.readFile(expandPath('/templates/' & templateName & ".txt"),'utf8',function(err,content) {
-			console.print("fpm #name#");
-			console.print(content);
-		});
-		emitter.emit('end',content);
-		return emitter;
+		var tmpl = fileRead(file=expandPath("/fpm/templates/" & templateName & ".txt"),charsetOrBufferSize="UTF-8");
+		
+		// if(len(trim(arguments.name))) {
+		// 	//console.print("#name#");	
+		// }
+		
+		console.print(tmpl);
 	}
 
 	line = function (argv) {
@@ -37,6 +37,6 @@ component name="help" extends="foundry.core" {
 	  var paths    = options.argv.remain.slice(1);
 
 	  if (options.help) return help('install');
-	  return module.exports(paths, options);
+	  return [paths, options];
 	}
 }

@@ -1,16 +1,12 @@
 
+@|bold fpm help list|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} list
-    {{#cyan}}bower{{/cyan}} ls
-
+   @|bold,cyan fpm|@ list
+   @|bold,cyan fpm|@ ls
 
 Options:
-
-    {{#yellow}}--map{{/yellow}}   - Generates a deep dependency JSON source mapping
-    {{#yellow}}--paths{{/yellow}} - Generates a simple JSON source mapping
-
+    @|yellow --map|@   - Generates a deep dependency JSON source mapping
+    @|yellow --paths|@ - Generates a simple JSON source mapping
 
 Description:
-
     Lists all packages

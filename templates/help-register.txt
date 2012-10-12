@@ -1,8 +1,7 @@
 
+@|bold fpm help register|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} register {{#cyan}}<name>{{/cyan}} {{#grey}}<url>{{/grey}}
+   @|bold,cyan fpm|@ @|bold,cyan register|@ @|white <name>|@ @|white <url>|@
 
 Description:
-
     Register a package.

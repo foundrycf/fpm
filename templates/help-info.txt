@@ -1,8 +1,7 @@
 
+@|bold fpm help info|@
 Usage:
-
-    {{#cyan}}bower{{/cyan}} info {{#grey}}<pkg>{{/grey}}
+    @|bold,cyan fpm|@ info @|white <pkg>|@
 
 Description:
-
     Version info and description of a particular package.
