@@ -59,7 +59,7 @@ component name="manager" extends="foundry.lib.module" {
 	};
 
 	public any function resolveLocal() {
-		var dirs = directoryList(path='./' & config.getDirectory() & '/',listInfo="name");
+		var dirs = directoryList(path='#this.cwd#/' & config.getDirectory() & '/',listInfo="name");
 
 		_.each(dirs,function(dir) {
 			var name = path.basename(dir);

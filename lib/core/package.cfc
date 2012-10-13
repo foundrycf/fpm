@@ -64,7 +64,7 @@ component name="package" extends="foundry.lib.module" {
 			"dir":require("regexp","^[\.\/~]"),
 			"https":require("regexp","^https?:\/\/")
 		};
-		this.localpath = path.join(expandPath('/'), 'foundry_modules', this.name);
+		this.localpath = path.join(request.cwd, 'foundry_modules', this.name);
 
 		if (structKeyExists(arguments,'endpoint')) {
 			if (this.expressions.gitPlain.test(endpoint)) {
