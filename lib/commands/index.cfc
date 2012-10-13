@@ -5,6 +5,7 @@
 **/
 component name="index" extends="foundry.core" {
 	public any function init() {
+		variables.console = require("console");
 		var help = new help();
 		var install = new install();
 		var list = new list();
@@ -38,4 +39,6 @@ component name="index" extends="foundry.core" {
 			'search': search.line
 		}
 	}
+
+	include "../util/print_func.cfm";
 }

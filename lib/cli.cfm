@@ -29,7 +29,7 @@ try {
 		abort;
 	}
 } catch(any err) {
-	writeOutput("fpm error " & serialize(err));
+	writeOutput("fpm error:#chr(10)#" & err.message & chr(10) & serialize(err.additional));
 	abort;
 }
 </cfscript>

@@ -22,13 +22,17 @@ component extends="foundry.core" {
 			var res = req.send().getPrefix();
 		} catch (any err) {
 			errors = err;
-			return callback(errors,'');
+			print('error',errors.message);
+			
+			return callback(errors.message,'');
 		}
 
 	    if (res.responseheader.status_code NEQ 200) {
 			print('error',name & ' not found');
 			return callback(errors,name & ' not found');
 	    }
+	    pkgInfo = deserializeJson(res.filecontent);
+		print('found package',name & " (" & pkgInfo.url & ")");
 	    callback(errors,deserializeJson(res.filecontent).url);
 	};
 
