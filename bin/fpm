@@ -1,2 +1,0 @@
-#!/usr/bin/env foundry
-<cfinclude template="../fpm/lib/cli.cfm" />
