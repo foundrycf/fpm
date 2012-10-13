@@ -30,10 +30,10 @@ component name="package" extends="foundry.lib.module" {
 		variables.childprocess = require("childprocess");
 		variables.urlUtil = require("url");
 		//variables.flush = require("../../deps/scriptcfc/flush");
-		variables.git = new lib.util.git();
+		variables.git = new fpm.lib.util.git();
 		//writeDump(var=git,abort=true);
-		variables.config   = new lib.core.config();
-		variables.source   = new lib.core.source();
+		variables.config   = new fpm.lib.core.config();
+		variables.source   = new fpm.lib.core.source();
 
 		variables.outputMode = arguments.output;
 		var temp = GetTempDirectory();

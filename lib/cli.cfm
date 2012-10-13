@@ -4,7 +4,7 @@
 argv = len(trim(url.args)) GT 0? listToArray(url.args," ") : [];
 
 try {
-	cli = new commands.index();
+	cli = new commands.index(url.pwd);
 	
 	if(arrayLen(argv)) {
 		command = argv[1];
@@ -29,7 +29,7 @@ try {
 		abort;
 	}
 } catch(any err) {
-	writeOutput("fpm error:#chr(10)#" & err.message & chr(10) & serialize(err.additional));
+	writeOutput("fpm error:#chr(10)#" & err.message & chr(10) & serialize(err));
 	abort;
 }
 </cfscript>

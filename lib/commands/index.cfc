@@ -4,7 +4,8 @@
 * 
 **/
 component name="index" extends="foundry.core" {
-	public any function init() {
+	public any function init(dir) {
+		request.cwd = dir;
 		variables.console = require("console");
 		var help = new help();
 		var install = new install();

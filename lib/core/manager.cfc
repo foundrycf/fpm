@@ -30,7 +30,7 @@ component name="manager" extends="foundry.lib.module" {
 		};
 
 		this.dependencies = {};
-		this.cwd = path.dirname(GetBaseTemplatePath());
+		this.cwd = request.cwd;
 		this.endpoints = structKeyExists(arguments,'endpoints')? arguments.endpoints : [];
 
 		return this;
@@ -96,7 +96,7 @@ component name="manager" extends="foundry.lib.module" {
 		if(fileExists(json)) {
 			var jsonFile = fileRead(json,'utf8');
 			//if (structKeyExists(arguments,'err')) return this.emit('error', err);
-			this.json    = JSON.parse(json);
+			this.json    = deserializeJson(jsonFile);
 			this.name    = this.json.name;
 			this.version = this.json.version;
 		} else {
@@ -113,7 +113,7 @@ component name="manager" extends="foundry.lib.module" {
 	 
 	    if (structCount(this.json.dependencies) LTE 0) return print('error','Could not find any dependencies');
 
-	    _.forEach(this.json.dependencies,function (name) {
+	    _.forEach(structKeyArray(this.json.dependencies),function (name) {
 		      var endpoint = this.json.dependencies[name];
 		      var pkg      = new Package(name, endpoint, this);
 		      this.dependencies[name] = structKeyExists(this.dependencies,name)? this.dependencies[name] : [];
@@ -152,7 +152,7 @@ component name="manager" extends="foundry.lib.module" {
 
 	public any function install() {
 		_.forEach(structKeyArray(this.dependencies),function (name) {
-	   			this.dependencies[name][0].install();
+	   			this.dependencies[name][1].install();
 	  		},
 	  		this
 	  	); 
