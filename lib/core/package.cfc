@@ -15,14 +15,15 @@ component name="package" extends="foundry.lib.module" {
 	public any function init(name, endpoint, manager, output = "html")  {
 		//NEEDED:
 		variables._ 		= require("util");
-		mixin("emitter");
-		this.emitter_init();
+		// mixin("emitter");
+		// this.emitter_init();
+		variables.path		= require("path");
 		variables.mkdirp	= require("mkdirp");
-		//variables.rimraf	= require('rimraf'); //not done yet
+		
+		variables.futil	= createObject("java","org.apache.commons.io.FileUtils"); //not done yet
 		//variables.async		= require("async");
 		variables.process	= require("process");
 		variables.semver	= require("semver");
-		variables.path		= require("path");
 		variables.system = CreateObject("java","java.lang.System");
 		variables.tmp 		= require("tmp");
 		variables.fs		= require("fs");
@@ -155,31 +156,45 @@ component name="package" extends="foundry.lib.module" {
 	};
 
 	public any function install() {
-		//if (path.resolve(this.path) == this.localPath) return this.emit('install');
-	  mkdirp.mkdirp(path.dirname(this.localPath), function (err) {
-	    if (structKeyExists(arguments,'err')) return this.emit('error', err);
-	    rimraf(this.localPath, function (err) {
-	      if (structKeyExists(arguments,'err')) return this.emit('error', err);
-	      return fs.rename(this.path, this.localPath, function (err) {
-	        if (!structKeyExists(arguments,'err')) return this.cleanUpLocal();
-	        fstream.Reader(this.path)
-	          .on('error', this.emit.bind(this, 'error'))
-	          .on('end', rimraf.bind(this, this.path, this.cleanUpLocal))
-	          .pipe(
-	            fstream.Writer({
-	              type: 'Directory',
-	              path: this.localPath
-	            })
-	          );
-	      });
-	    });
-	  });
+		if (path.resolve(this.path) EQ this.localPath) return true;
+		
+		//RECURSIVE "MKDIR -P"
+		try {
+			if(!directoryExists(path.dirname(this.localPath))) futil.forceMkdir(createObject("java","java.io.File").init(path.dirname(this.localPath)));	
+		} catch (any err) {
+			print("error",err.message)
+		}
+
+		//RECURSIVE "RM -RF"
+		try {
+			if(directoryExists(this.localPath)) futil.forceDelete(createObject("java","java.io.File").init(this.localPath));
+		} catch (any err) {
+			print("error",err.message)
+		}
+		
+		try { 
+			directoryRename(this.path, this.localPath);
+		} catch (any err) {
+			print("error",err.message);
+			this.cleanUpLocal();
+			// if (!structKeyExists(arguments,'err')) return 
+			//  fstream.Reader(this.path)
+			//    .on('error', this.emit.bind(this, 'error'))
+			//    .on('end', rimraf.bind(this, this.path, this.cleanUpLocal))
+			//    .pipe(
+			//      fstream.Writer({
+			//        type: 'Directory',
+			//        path: this.localPath
+			//      })
+			//    );
+		}
 	};
 	public any function cleanUpLocal() {
-	  if (this.gitUrl) this.json.repository = { type: "git", url: this.gitUrl };
-	  if (this.assetUrl) this.json = this.generateAssetJSON();
-	  fs.writeFile(path.join(this.localPath, config.getJson()), JSON.stringify(this.json, null, 2));
-	  rimraf(path.join(this.localPath, '.git'), this.emit.bind(this, 'install'));
+	  if (structKeyExists(this,'gitUrl')) this.json.repository = { type: "git", url: this.gitUrl };
+	  if (structKeyExists(this,'assetUrl')) this.json = this.generateAssetJSON();
+	  fileWrite(path.join(this.localPath, config.getJson()), serializeJson(this.json));
+	  //rimraf.rmrf(path.join(this.localPath, '.git'));
+	  this.install();
 	};
 
 	public any function generateAssetJSON() {
@@ -202,7 +217,6 @@ component name="package" extends="foundry.lib.module" {
 
 	// Private
 	public any function loadJSON() {
-		
 		//read json
 		//print("reading",path.join(this.path, 'foundry.json'));
 		var configFile = path.join(this.path, 'foundry.json');
@@ -283,7 +297,7 @@ component name="package" extends="foundry.lib.module" {
 			this.loadJSON();
 
 			structDelete(this,'git');
-			//this.addDependencies();
+			this.addDependencies();
 			//   fs.stat(this.path, function (err, stats) {
 			//     if (structKeyExists(arguments,'err') AND !_.isEmpty(err)) return this.emit('error', err);
 		});
@@ -303,7 +317,7 @@ component name="package" extends="foundry.lib.module" {
 
 	  for(dep in dependencies) {
 	  	var ep = dependencies[dep];
-  		this.dependencies[dep] = new lib.core.Package(dep, ep);
+  		this.dependencies[dep] = new fpm.lib.core.Package(dep, ep);
 
   		this.dependencies[dep].resolve();
 	  }
@@ -330,18 +344,18 @@ component name="package" extends="foundry.lib.module" {
 
 	public any function cache() {
 		mkdirp.mkdirp(cache, function (err) {
-			//if (structKeyExists(arguments,'err') AND len(arguments.err) GT 0) return this.emit('error', err);
-
-			fs.stat(this.path, function (err) {
-				// if (!structKeyExists(arguments,'err')) {
-				// 	logger.print('Cached... ' & this.gitUrl);
-				// 	return this.emit('cache');
-				// }
-				if(!isDefined("this.giturl")) {
-					//writeDump(var=this,abort=true);
+			//if (structKeyExists(arguments,'err') AND len(arguments.err) GT 0) return print("error",err.message);
+			print("cloning",this.gitUrl);
+			cp = git.clone(this.gitUrl,this.path);
+			
+			if(directoryExists(this.path)) {
+				return print('cached',this.gitUrl);
+			} else {
+				if(!structKeyExists(this,'giturl')) {
 					print("error","No git url specified for #this.name#");
 					return;
 				}
+
 				print('caching',this.gitUrl);
 
 				var theUrl = this.gitUrl;
@@ -351,11 +365,10 @@ component name="package" extends="foundry.lib.module" {
 				}
 
 				//execute name="git" arguments="clone #theUrl# #this.path#" timeout="10" variable="cp";
-				cp = git.clone(theUrl,this.path);
 			
 
 				//this.emit('cache');
-			});
+			}
 		});
 	};
 

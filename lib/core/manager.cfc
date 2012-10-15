@@ -17,6 +17,11 @@ component name="manager" extends="foundry.lib.module" {
 		variables.outputMode = "console";
 		variables.config = require("./config");
 		variables.prune = require('../util/prune');
+		variables.futil	= createObject("java","org.apache.commons.io.FileUtils"); //not done yet
+		var jarPaths = [];
+		jarPaths.add(expandPath('/fpm/deps/wildcard-1.0.jar'));
+		variables.loader = createObject("component","foundry.deps.javaloader.JavaLoader").init(jarPaths);
+		
 		mixin("emitter");
 		this.emitter_init();
 		//variables.async = require('async');
@@ -39,7 +44,7 @@ component name="manager" extends="foundry.lib.module" {
 
 	public any function resolve() {
 		var resolved = function() {
-			//this.prune();
+			this.prune();
 			this.install();
 
 			//this.emit('resolve');
@@ -59,9 +64,10 @@ component name="manager" extends="foundry.lib.module" {
 	};
 
 	public any function resolveLocal() {
-		var dirs = directoryList(path='#this.cwd#/' & config.getDirectory() & '/',listInfo="name");
-
+		print("cwd",this.cwd);
+		variables.dirs = loader.create("com.esotericsoftware.wildcard.Paths").init(javaCast("string",this.cwd),['./foundry_modules/*']).dirsOnly().getPaths();
 		_.each(dirs,function(dir) {
+			print("resolveLocal",dir)
 			var name = path.basename(dir);
 			//console.log(name);
 
@@ -92,7 +98,8 @@ component name="manager" extends="foundry.lib.module" {
 
 	public any function loadJSON() {
 		var json = path.join(this.cwd, config.getjson());
-
+		print('config',json);
+		
 		if(fileExists(json)) {
 			var jsonFile = fileRead(json,'utf8');
 			//if (structKeyExists(arguments,'err')) return this.emit('error', err);
@@ -119,7 +126,6 @@ component name="manager" extends="foundry.lib.module" {
 		      this.dependencies[name] = structKeyExists(this.dependencies,name)? this.dependencies[name] : [];
 		      this.dependencies[name].add(pkg);
 		      pkg.resolve();
-
 		  },this);
 	};
 
@@ -140,12 +146,12 @@ component name="manager" extends="foundry.lib.module" {
 	};
 
 	public any function prune() {
-		try {
-			this.dependencies = this.prune(this.getDeepDependencies());
-		} catch (err) {
-			print("error",err.message);
-			//this.emit('error', err);
-		}
+		// try {
+		// 	this.dependencies = this.prune(this.getDeepDependencies());
+		// } catch (err) {
+		// 	print("error",err.message);
+		// 	//this.emit('error', err);
+		// }
 
 		return this;
 	};

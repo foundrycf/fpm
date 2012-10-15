@@ -27,7 +27,7 @@ component name="install" extends="foundry.core" {
     var optionTypes = { help: false };
     var shorthand   = { 'h': ['--help'], 'S': ['--save'] };
     var manager = new fpm.lib.core.manager(paths);
-    if (structKeyExists(arguments,'options') && structKeyExists(arguments.options,'save')) save(emitter, manager, paths);
+    //if (structKeyExists(arguments,'options') && structKeyExists(arguments.options,'save')) save(emitter, manager, paths);
 
     manager.resolve();
 

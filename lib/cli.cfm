@@ -1,6 +1,7 @@
 <cfparam name="url.args" default="" />
 <cfsetting enablecfoutputonly=true />
 <cfscript>
+_ = new foundry.lib.util();
 argv = len(trim(url.args)) GT 0? listToArray(url.args," ") : [];
 
 try {
@@ -29,7 +30,7 @@ try {
 		abort;
 	}
 } catch(any err) {
-	writeOutput("fpm error:#chr(10)#" & err.message & chr(10) & serialize(err));
+	writeOutput("fpm error:#chr(10)#" & err.message & chr(10) & left(serialize(err),600));
 	abort;
 }
 </cfscript>

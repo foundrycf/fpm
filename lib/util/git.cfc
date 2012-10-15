@@ -4,7 +4,7 @@ component accessors=true extends="foundry.lib.module" {
 
 	public any function init() {
     	var path = require("path");
-    	var jarpaths = [path.resolve(path.dirname(getCurrentTemplatePath()),'../../deps/org.eclipse.jgit-2.1.0.201209190230-r.jar')];
+    	var jarpaths = [path.resolve(path.dirname(getCurrentTemplatePath()),'../../deps/jgit_w_jsch.jar')];
 
 		variables.java = createObject("component","foundry.deps.javaloader.JavaLoader").init(jarpaths);
    		//var repoFile = createObject("java","java.io.File").init(repository);
@@ -30,12 +30,13 @@ component accessors=true extends="foundry.lib.module" {
 			err:{},
 			result:""
 		}
+
+		
 		try {
 			result = {
 				err:{},
 				result:command.call()
 			}
-
 		} catch(any error) {
 			result = {
 				err:error,
