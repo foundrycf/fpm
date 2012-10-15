@@ -15,21 +15,25 @@ component extends="foundry.core" {
 	}
 
 	public any function lookup(name,callback) {
-		var errors = {};
+		var errors = "";
 		print('looking for',name);
 		try {
 			var req = new http(method="get",url=endpoint & '/' & encodeURIComponent(name));
 			var res = req.send().getPrefix();
+
 		} catch (any err) {
 			errors = err;
 			print('error',errors.message);
 			
-			return callback(errors.message,'');
+			callback(errors.message,'');
+			return;
 		}
 
 	    if (res.responseheader.status_code NEQ 200) {
-			print('error',name & ' not found');
-			return callback(errors,name & ' not found');
+	    	errors = name & ' not found in fpm registry.'
+			print('error',errors);
+			callback(errors,'');
+			return;
 	    }
 	    pkgInfo = deserializeJson(res.filecontent);
 		print('found package',name & " (" & pkgInfo.url & ")");

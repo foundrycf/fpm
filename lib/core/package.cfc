@@ -32,7 +32,7 @@ component name="package" extends="foundry.lib.module" {
 		variables.urlUtil = require("url");
 		//variables.flush = require("../../deps/scriptcfc/flush");
 		variables.git = new fpm.lib.util.git();
-		//writeDump(var=git,abort=true);
+		
 		variables.config   = new fpm.lib.core.config();
 		variables.source   = new fpm.lib.core.source();
 
@@ -65,6 +65,7 @@ component name="package" extends="foundry.lib.module" {
 			"dir":require("regexp","^[\.\/~]"),
 			"https":require("regexp","^https?:\/\/")
 		};
+
 		this.localpath = path.join(request.cwd, 'foundry_modules', this.name);
 
 		if (structKeyExists(arguments,'endpoint')) {
@@ -115,8 +116,6 @@ component name="package" extends="foundry.lib.module" {
 				this.name      = replace(name,this.assetType, '');
 
 			} else {
-				//logger.print('endpoint: other');
-				//writeDump(var=endpoint,abort=true);
 				if(listLen(endpoint,'##') GT 1) {
 					this.tag = listToArray(endpoint,'##')[2];
 				}
@@ -137,22 +136,32 @@ component name="package" extends="foundry.lib.module" {
 	    this.download();
 	  } else if (isDefined("this.gitUrl")) {
 	    this.clone();
-	  } else if (isDefined("this.path")) {
+	  } else if (structKeyExists(this,'path')) {
 	    this.copy();
 	  } else {
-	    this.lookup();
-	    this.clone();
+	    if(this.lookup()) {
+	    	this.clone();
+	    }
 	  }
 
 	  return this;
 	};
 
-	public any function lookup() {
-	  source.lookup(this.name, function (err, theUrl) {
-	    if (structCount(err) GT 0) writeDump(var=err,abort=true); //return print("error", serializeJson(err));
-	    this.gitUrl = theUrl;
-	    //this.emit('lookup');
-	  });
+	public boolean function lookup() {
+		var found = false;
+		source.lookup(this.name, function (err, theUrl) {
+			if (len(trim(err)) GT 0) {
+				found = false;
+				return;
+			} else {
+				this.gitUrl = theUrl;
+				found = true;
+				return;
+			}
+
+		});
+
+	  return found;
 	};
 
 	public any function install() {
@@ -322,7 +331,6 @@ component name="package" extends="foundry.lib.module" {
   		this.dependencies[dep].resolve();
 	  }
 
-		//writeDump(var=this,abort=true);
 	  //this.resolve();
 	  // for(dep in dependencies) {
 	  // 	thread name="fpm-dep-#dep#" action="join" {}
@@ -472,28 +480,40 @@ component name="package" extends="foundry.lib.module" {
 	public any function fetch() {
 		// print("fetch",path.resolve(cache, this.name));
 		// cp = git.fetch();
-		// //writeDump(var=cp,abort=true);
 		// this.Git.getRepository().close();
 		//cp.close();
-		// /writeDump(var=Runtime.exec(),abort=true);
-	 	// try {
+		// try {
 
-	 	// 	execute name="git" arguments="fetch #path.resolve(cache, this.name)#" timeout="10" variable="cp";
-	 	// } catch(any err) {
+		// 	execute name="git" arguments="fetch #path.resolve(cache, this.name)#" timeout="10" variable="cp";
+		// } catch(any err) {
 
-	 	// }
-	 	
+		// }
 
-	  // cp.on('close', function (code) {
-	  //   if (code != 0) return this.emit('error', logger.error('Git status: ' + code));  
-	  // });
+
+		// cp.on('close', function (code) {
+		//   if (code != 0) return this.emit('error', logger.error('Git status: ' + code));  
+		// });
 	};
 
 	public any function fetchURL() {
-	  if (this.json.repository && this.json.repository.type == 'git') {
-	    //this.emit('fetchURL',  this.json.repository.url);
+	  if (	isStruct(this.json) AND 
+	  		structKeyExists(this,'json') AND 
+		  	structKeyExists(this.json,'repository') AND 
+	  		isStruct(this.json.repository) AND 
+		  	structKeyExists(this.json.repository,'type') AND 
+		  	this.json.repository.type EQ 'git'
+		) {
+	  	return this.json.repository.url;
+	  } else if(isStruct(this.json) AND 
+	  		structKeyExists(this,'json') AND 
+		  	structKeyExists(this.json,'repository') AND 
+		  	_.isString(this.json.repository) AND
+		  	this.json.repository CONTAINS "git"
+		) {
+	  	return this.json.repository;
 	  } else {
-	    print('error','No git url found for ' & this.json.name);
+	    print('error','No git url found for ' & this.name);
+	  	return false;
 	  }
 	};
 

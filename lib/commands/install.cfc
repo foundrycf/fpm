@@ -15,7 +15,7 @@ component name="install" extends="foundry.core" {
     return this;
   }
 
-  public any function install(paths = [], options = {}) {
+  public any function install(args = [], options = {}) {
     var emitter = require('emitter');
     //var async   = require('async');
     //var nopt    = require('nopt');
@@ -26,7 +26,7 @@ component name="install" extends="foundry.core" {
 
     var optionTypes = { help: false };
     var shorthand   = { 'h': ['--help'], 'S': ['--save'] };
-    var manager = new fpm.lib.core.manager(paths);
+    var manager = new fpm.lib.core.manager(args);
     //if (structKeyExists(arguments,'options') && structKeyExists(arguments.options,'save')) save(emitter, manager, paths);
 
     manager.resolve();

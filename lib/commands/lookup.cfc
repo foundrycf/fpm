@@ -16,26 +16,30 @@ component name="lookup" extends="foundry.core" {
 	}
 
 	public any function lookup(name) {
-
+		var helper = new help();
 		var source = new fpm.lib.core.source(outputMode="console");
+		if(!structKeyExists(arguments,'name')) {
+			helper.help("lookup");
+			return;
+		}
 		source.lookup(name, function (err, theUrl) {
 			//print("error",err.message);
 			//writeOutput(serialize(err));
-		    if (structCount(err) GT 0) {
+		    if (len(trim(err)) GT 0) {
 		      source.search(name, function (err, packages) {
 		        if (arrayLen(packages)) {
 		        	saveContent variable="suggestions" {
-		        	 print("suggestions" & arrayToList(packages,chr(10)));
-		        	};
-
+		        		arrayToList(packages,chr(10))
+		        	 };
+					print("suggestions",suggestions);
+		        	
 		        	//print("suggestions",suggestions);
 		        } else {
 		          	print("error","Sorry! No packages found.")
 		        }
 		      });
-
 		    } else {
-		    	
+		    	print("error",err)
 		    }
 		});
 	}

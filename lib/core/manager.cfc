@@ -64,17 +64,14 @@ component name="manager" extends="foundry.lib.module" {
 	};
 
 	public any function resolveLocal() {
-		print("cwd",this.cwd);
 		variables.dirs = loader.create("com.esotericsoftware.wildcard.Paths").init(javaCast("string",this.cwd),['./foundry_modules/*']).dirsOnly().getPaths();
 		_.each(dirs,function(dir) {
-			print("resolveLocal",dir)
 			var name = path.basename(dir);
-			//console.log(name);
-
+			
 			this.dependencies[name] = [];
 			this.dependencies[name].add(new Package(name, dir, this));
 
-		});
+		},this);
 
 		//this.emit('resolveLocal');
 	};
@@ -98,7 +95,7 @@ component name="manager" extends="foundry.lib.module" {
 
 	public any function loadJSON() {
 		var json = path.join(this.cwd, config.getjson());
-		print('config',json);
+		//print('config',json);
 		
 		if(fileExists(json)) {
 			var jsonFile = fileRead(json,'utf8');
@@ -107,7 +104,7 @@ component name="manager" extends="foundry.lib.module" {
 			this.name    = this.json.name;
 			this.version = this.json.version;
 		} else {
-			print('error','Could not find local foundry.json');
+			print('error','Could not find a foundry.json in your project.');
 		}
 	};
 
